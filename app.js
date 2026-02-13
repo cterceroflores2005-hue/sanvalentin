@@ -11,6 +11,10 @@ const yesBtn = document.getElementById("yesBtn");
 const nightToggle = document.getElementById("nightToggle");
 const music = document.getElementById("bgMusic");
 
+// Control para evitar cerrar modal al tocar afuera (útil para minijuegos)
+let modalBackdropCloseEnabled = true;
+let isCatchGameRunning = false;
+
 /* =========================
    MÚSICA DE FONDO (suave)
    - solo inicia al tocar "Sí"
@@ -58,6 +62,7 @@ function closeModal(){
 }
 
 modal.addEventListener("click", (e) => {
+  if (!modalBackdropCloseEnabled) return;
   if (e.target === modal) closeModal();
 });
 
@@ -68,7 +73,11 @@ function createHeart(){
   const h = document.createElement("div");
   h.className = "heart";
   h.innerHTML = "❤️";
-  h.style.left = Math.random() * 100 + "vw";
+  
+  if (isCatchGameRunning) {
+    h.style.zIndex = "10005";
+  }
+h.style.left = Math.random() * 100 + "vw";
   h.style.animationDuration = (Math.random() * 3 + 3) + "s";
 
   h.onclick = function(){
@@ -439,6 +448,9 @@ function game1(){
 
   function stopGame(){
     running = false;
+    isCatchGameRunning = false;
+    modalBackdropCloseEnabled = true;
+
     window.catchFloatingHeart = null;
     if(timerId) clearInterval(timerId);
     timerId = null;
@@ -451,60 +463,10 @@ function game1(){
     if(tLeft) tLeft.innerText = `${timeLeft}s`;
   }
 
-  function startGame(){
-    if(running) return;
-    running = true;
-    score = 0;
-    timeLeft = 15;
-    updateUI();
-
-    // Captura corazones flotantes SOLO cuando está corriendo
-    window.catchFloatingHeart = function(h){
-      if(!running) return;
-
-      score++;
-      const rect = h.getBoundingClientRect();
-      const x = rect.left + rect.width/2;
-      const y = rect.top + rect.height/2;
-
-      // Quitar corazón y hacer explosión + mensaje
-      h.remove();
-      heartPop(x, y);
-
-      updateUI();
-
-      if(score >= goal){
-        stopGame();
-        addPoints(8);
-        openModal(`
-          <h2>¡Ganado! ❤️</h2>
-          <p>¡Lo lograste en tiempo! 💖</p>
-          <button onclick="closeModal()">Cerrar</button>
-        `);
-      }
-    };
-
-    // Cuenta regresiva
-    timerId = setInterval(()=>{
-      timeLeft--;
-      updateUI();
-
-      if(timeLeft <= 0){
-        stopGame();
-        openModal(`
-          <h2>Se acabó el tiempo ⏳</h2>
-          <p>Atrapaste <b>${score}</b> de <b>${goal}</b>. Intenta otra vez amor 💕</p>
-          <button onclick="closeModal()">Cerrar</button>
-        `);
-      }
-    }, 1000);
-  }
-
   function heartPop(x, y){
-    // Partículas corazón
     for(let i=0;i<14;i++){
       const p = document.createElement("div");
-      p.className = "firework"; // reutilizamos tu estilo firework
+      p.className = "firework";
       p.style.left = x + "px";
       p.style.top = y + "px";
       p.style.setProperty("--x", (Math.random()-0.5)*220 + "px");
@@ -514,7 +476,6 @@ function game1(){
       setTimeout(()=>p.remove(), 1000);
     }
 
-    // Mensaje bonito en el punto
     const msg = document.createElement("div");
     msg.innerText = loveMsgs[Math.floor(Math.random()*loveMsgs.length)];
     msg.style.position = "fixed";
@@ -525,17 +486,15 @@ function game1(){
     msg.style.fontSize = "15px";
     msg.style.padding = "6px 10px";
     msg.style.borderRadius = "14px";
-    msg.style.background = "rgba(255,255,255,0.85)";
+    msg.style.background = "rgba(255,255,255,0.90)";
     msg.style.color = "#ff4d6d";
     msg.style.boxShadow = "0 8px 18px rgba(0,0,0,0.18)";
-    msg.style.zIndex = "10001";
+    msg.style.zIndex = "10006";
     msg.style.pointerEvents = "none";
     msg.style.opacity = "0";
     msg.style.transition = "opacity .15s ease, transform .7s ease";
-
     document.body.appendChild(msg);
 
-    // Animación (sube y se desvanece)
     requestAnimationFrame(()=>{
       msg.style.opacity = "1";
       msg.style.transform = "translate(-50%, -90%)";
@@ -546,36 +505,99 @@ function game1(){
       msg.style.transform = "translate(-50%, -130%)";
     }, 650);
 
-    setTimeout(()=>msg.remove(), 900);
+    setTimeout(()=>msg.remove(), 950);
   }
 
-  // Abrimos modal inicial con botón iniciar
+  function startGame(){
+    if(running) return;
+    running = true;
+    score = 0;
+    timeLeft = 15;
+
+    isCatchGameRunning = true;
+    modalBackdropCloseEnabled = false;
+
+    updateUI();
+
+    window.catchFloatingHeart = function(h){
+      if(!running) return;
+
+      score++;
+
+      const rect = h.getBoundingClientRect();
+      const x = rect.left + rect.width/2;
+      const y = rect.top + rect.height/2;
+
+      h.remove();
+      heartPop(x, y);
+      updateUI();
+
+      if(score >= goal){
+        stopGame();
+        addPoints(8);
+        openModal(`
+          <div class="contract-paper" style="text-align:center;">
+            <div class="contract-title">¡Ganado! ❤️</div>
+            <div class="contract-line">¡Lo lograste en tiempo! 💖</div>
+            <div class="contract-actions" style="margin-top:14px;">
+              <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
+            </div>
+          </div>
+        `);
+      }
+    };
+
+    timerId = setInterval(()=>{
+      timeLeft--;
+      updateUI();
+
+      if(timeLeft <= 0){
+        stopGame();
+        openModal(`
+          <div class="contract-paper" style="text-align:center;">
+            <div class="contract-title">Se acabó el tiempo ⏳</div>
+            <div class="contract-line">
+              Atrapaste <b>${score}</b> de <b>${goal}</b>. Intenta otra vez amor 💕
+            </div>
+            <div class="contract-actions" style="margin-top:14px;">
+              <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
+            </div>
+          </div>
+        `);
+      }
+    }, 1000);
+  }
+
   openModal(`
-    <h3>Atrapa ${goal} ❤️</h3>
-    <p>Tiempo: <b id="tLeft">15s</b></p>
-    <p id="cSc">0 / ${goal}</p>
-    <button onclick="startCatchGame()">Iniciar ▶️</button>
-    <button onclick="closeModal()">Salir</button>
+    <div class="contract-paper" style="text-align:center;">
+      <div class="contract-title">Atrapa ${goal} ❤️</div>
+      <div class="contract-line">Tiempo: <b id="tLeft">15s</b></div>
+      <div class="contract-line" id="cSc">0 / ${goal}</div>
+      <div class="contract-actions" style="margin-top:14px;">
+        <button class="contract-btn-primary" onclick="startCatchGame()">Iniciar ▶️</button>
+        <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
+      </div>
+    </div>
   `);
 
-  // Hacemos accesible el iniciar desde el botón del modal
   window.startCatchGame = function(){
     startGame();
-    // Cambiar el contenido del modal a "en juego"
     openModal(`
-      <h3>¡Corre! 😍</h3>
-      <p>Tiempo: <b id="tLeft">${timeLeft}s</b></p>
-      <p id="cSc">${score} / ${goal}</p>
-      <p style="opacity:.9;">Atrapa 5 corazones en 15 segundos 💘</p>
-      <button onclick="closeModal()">Salir</button>
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">¡Corre! 😍</div>
+        <div class="contract-line">Tiempo: <b id="tLeft">${timeLeft}s</b></div>
+        <div class="contract-line" id="cSc">${score} / ${goal}</div>
+        <div class="contract-line" style="opacity:.9;">Atrapa 5 corazones en 15 segundos 💘</div>
+        <div class="contract-actions" style="margin-top:14px;">
+          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
+        </div>
+      </div>
     `);
   };
 
-  // Al cerrar modal: detener todo
   const oldClose = window.closeModal;
   window.closeModal = function(){
     stopGame();
-    // restaurar closeModal original
     window.closeModal = oldClose;
     oldClose();
   };
@@ -925,156 +947,6 @@ window.g = function(x, num){
 };
 
 /* =========================
-   7️⃣ ROMPECABEZAS (foto)
-   - Tap-friendly: toca 2 piezas para intercambiar
-   - Responsive: se adapta al ancho del celular
-========================= */
-function game7(){
-  const imgSrc = "img/puzzle.jpeg"; // 👈 tu imagen en el repo
-  const size = 3;                  // 3x3
-  const winPoints = 12;
-
-  let order = [...Array(size*size).keys()];
-  let selectedIndex = null;
-
-  function shuffle(){
-    for(let i=order.length-1;i>0;i--){
-      const j = Math.floor(Math.random()*(i+1));
-      [order[i], order[j]] = [order[j], order[i]];
-    }
-  }
-
-  function isSolved(){
-    return order.every((v, i) => v === i);
-  }
-
-  function computeBoardPx(){
-    // Basado en el contenedor del modal, para que se vea perfecto en celular
-    const wrap = document.querySelector(".puzzle-wrap");
-    const fallback = Math.min(320, Math.floor(window.innerWidth * 0.78));
-    if(!wrap) return fallback;
-
-    const w = wrap.getBoundingClientRect().width || fallback;
-    // margen interno aproximado
-    const px = Math.floor(Math.min(360, w - 24));
-    return Math.max(240, Math.min(px, Math.floor(window.innerWidth * 0.82)));
-  }
-
-  function render(){
-    openModal(`
-      <div class="contract-paper puzzle-wrap">
-        <div class="contract-title">🧩 Rompecabezas</div>
-        <div class="contract-line" style="text-align:center;opacity:.9;">
-          Toca una pieza y luego otra para intercambiarlas 💕
-        </div>
-
-        <div class="puzzle-board" id="puzzleBoard"></div>
-
-        <div class="contract-actions" style="margin-top:12px;">
-          <button class="contract-btn-secondary" onclick="puzzleShuffle()">Mezclar 🔀</button>
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
-    `);
-
-    const board = document.getElementById("puzzleBoard");
-    const boardPx = computeBoardPx();
-
-    board.style.setProperty("--puzzle-size", boardPx + "px");
-    board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
-    board.style.gridTemplateRows = `repeat(${size}, 1fr)`;
-
-    board.innerHTML = "";
-    const tilePx = boardPx / size;
-
-    order.forEach((tileId, pos) => {
-      const r = Math.floor(tileId / size);
-      const c = tileId % size;
-
-      const tile = document.createElement("div");
-      tile.className = "puzzle-tile";
-      tile.style.backgroundImage = `url('${imgSrc}')`;
-      tile.style.backgroundPosition = `${-c*tilePx}px ${-r*tilePx}px`;
-
-      tile.addEventListener("click", () => onTileTap(pos, tile, boardPx));
-      board.appendChild(tile);
-    });
-  }
-
-  function clearSelection(){
-    selectedIndex = null;
-    document.querySelectorAll(".puzzle-tile").forEach(t => t.classList.remove("puzzle-selected"));
-  }
-
-  function onTileTap(pos, tileEl, boardPx){
-    if(selectedIndex === null){
-      selectedIndex = pos;
-      tileEl.classList.add("puzzle-selected");
-      return;
-    }
-
-    if(selectedIndex === pos){
-      clearSelection();
-      return;
-    }
-
-    [order[selectedIndex], order[pos]] = [order[pos], order[selectedIndex]];
-    clearSelection();
-
-    const board = document.getElementById("puzzleBoard");
-    if(!board) return;
-
-    const tilePx = boardPx / size;
-    [...board.children].forEach((tileNode, p) => {
-      const tileId = order[p];
-      const r = Math.floor(tileId / size);
-      const c = tileId % size;
-      tileNode.style.backgroundPosition = `${-c*tilePx}px ${-r*tilePx}px`;
-    });
-
-    if(isSolved()){
-      addPoints(winPoints);
-      openModal(`
-        <div class="contract-paper" style="text-align:center;">
-          <div class="contract-title">💖 ¡Rompecabezas completo!</div>
-          <div class="contract-line" style="margin-top:10px;">
-            Sabía que lo lograrías 😘✨
-          </div>
-          <div class="contract-actions" style="margin-top:14px;">
-            <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
-          </div>
-        </div>
-      `);
-    }
-  }
-
-  // Botón Mezclar
-  window.puzzleShuffle = function(){
-    shuffle();
-    clearSelection();
-
-    const board = document.getElementById("puzzleBoard");
-    if(!board){ render(); return; }
-
-    const boardPxStr = getComputedStyle(board).getPropertyValue("--puzzle-size").trim();
-    const boardPx = parseInt(boardPxStr) || computeBoardPx();
-    board.style.setProperty("--puzzle-size", boardPx + "px");
-
-    const tilePx = boardPx / size;
-    [...board.children].forEach((tileNode, p) => {
-      const tileId = order[p];
-      const r = Math.floor(tileId / size);
-      const c = tileId % size;
-      tileNode.style.backgroundPosition = `${-c*tilePx}px ${-r*tilePx}px`;
-    });
-  };
-
-  shuffle();
-  render();
-}
-
-
-/* =========================
    EXPONER FUNCIONES (por si acaso)
    (para onclick del HTML)
 ========================= */
@@ -1093,4 +965,3 @@ window.game3 = game3;
 window.game4 = game4;
 window.game5 = game5;
 window.game6 = game6;
-window.game7 = game7;
