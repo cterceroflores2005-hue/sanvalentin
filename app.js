@@ -48,7 +48,91 @@ let globalPoints = 0;
 function addPoints(n){
   globalPoints += n;
   pointsDisplay.innerText = "Puntos: " + globalPoints;
+  checkVideoUnlock();
 }
+
+
+/* =========================
+   VIDEO DESBLOQUEABLE (150 PTS)
+========================= */
+const VIDEO_UNLOCK_POINTS = 150;
+const LS_VIDEO_UNLOCKED = "sv_video_unlocked";
+
+function ensureVideoToggle(){
+  if (document.getElementById("videoToggle")) return;
+  const btn = document.createElement("div");
+  btn.id = "videoToggle";
+  btn.textContent = "🎬";
+  btn.title = "Video sorpresa";
+  btn.style.position = "fixed";
+  btn.style.top = "56px";
+  btn.style.left = "12px";
+  btn.style.fontSize = "28px";
+  btn.style.cursor = "pointer";
+  btn.style.zIndex = "10000";
+  btn.style.userSelect = "none";
+  btn.style.display = "none";
+  btn.addEventListener("click", () => openVideoReward());
+  document.body.appendChild(btn);
+}
+
+function showVideoToggle(){
+  const btn = document.getElementById("videoToggle");
+  if (btn) btn.style.display = "block";
+}
+
+function checkVideoUnlock(){
+  ensureVideoToggle();
+  let unlocked = false;
+  try { unlocked = localStorage.getItem(LS_VIDEO_UNLOCKED) === "1"; } catch(e){}
+  if (!unlocked && globalPoints >= VIDEO_UNLOCK_POINTS){
+    try { localStorage.setItem(LS_VIDEO_UNLOCKED, "1"); } catch(e){}
+    showVideoToggle();
+    openModal(`
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">🎉 ¡Desbloqueado!</div>
+        <div class="contract-line">Llegaste a <b>${VIDEO_UNLOCK_POINTS}</b> puntos 💖</div>
+        <div class="contract-actions" style="margin-top:14px;">
+          <button class="contract-btn-primary" onclick="openVideoReward()">Ver video 🎬</button>
+          <button class="contract-btn-secondary" onclick="closeModal()">Después</button>
+        </div>
+      </div>
+    `);
+  } else if (unlocked){
+    showVideoToggle();
+  }
+}
+
+function openVideoReward(){
+  ensureVideoToggle();
+  showVideoToggle();
+  const previewUrl = "https://drive.google.com/file/d/1vHY1_LCeArb-yVkPy4_KK57x6wtMAwtf/preview";
+  openModal(`
+    <div class="contract-paper" style="text-align:center; max-width:720px;">
+      <div class="contract-title">🎬 Video sorpresa</div>
+      <div style="margin-top:10px; width:min(720px, 85vw); aspect-ratio:16/9; border-radius:14px; overflow:hidden;">
+        <iframe
+          src="${previewUrl}"
+          style="width:100%; height:100%; border:0;"
+          allow="autoplay; encrypted-media"
+          allowfullscreen
+        ></iframe>
+      </div>
+      <div class="contract-actions" style="margin-top:14px;">
+        <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
+      </div>
+    </div>
+  `);
+}
+window.openVideoReward = openVideoReward;
+
+// Al cargar, si ya estaba desbloqueado, mostramos el botón 🎬
+(function initVideoUnlock(){
+  ensureVideoToggle();
+  try{
+    if (localStorage.getItem(LS_VIDEO_UNLOCKED) === "1") showVideoToggle();
+  }catch(e){}
+})();
 
 /* =========================
    MODAL
@@ -499,7 +583,7 @@ function game1(){
         addPoints(8);
         openModal(`
           <h2>¡Ganado! ❤️</h2>
-          <p>¡Lo lograste en tiempo! 💖</p>
+          <p>¡Lo logro a tiempo! 💖</p>
           <button onclick="closeModal()">Cerrar</button>
         `);
       }
@@ -514,7 +598,7 @@ function game1(){
         stopGame();
         openModal(`
           <h2>Se acabó el tiempo ⏳</h2>
-          <p>Atrapaste <b>${score}</b> de <b>${goal}</b>. Intenta otra vez amor 💕</p>
+          <p>Atrapaste <b>${score}</b> de <b>${goal}</b>. intente otra vez amor 💕</p>
           <button onclick="closeModal()">Cerrar</button>
         `);
       }
@@ -572,7 +656,7 @@ function game1(){
 
   // Abrimos modal inicial con botón iniciar
   openModal(`
-    <h3>Atrapa ${goal} ❤️</h3>
+    <h3>Atrape ${goal} ❤️</h3>
     <p>Tiempo: <b id="tLeft">15s</b></p>
     <p id="cSc">0 / ${goal}</p>
     <button onclick="startCatchGame()">Iniciar ▶️</button>
@@ -587,7 +671,7 @@ function game1(){
       <h3>¡Corre! 😍</h3>
       <p>Tiempo: <b id="tLeft">${timeLeft}s</b></p>
       <p id="cSc">${score} / ${goal}</p>
-      <p style="opacity:.9;">Atrapa 5 corazones en 15 segundos 💘</p>
+      <p style="opacity:.9;">Atrape 5 corazones en 15 segundos 💘</p>
       <button onclick="closeModal()">Salir</button>
     `);
   };
@@ -652,7 +736,7 @@ function game2(){
 
     correctGiftId = giftIds[Math.floor(Math.random()*giftIds.length)];
     let order = randomOrder();
-    render(order, "Mira bien… 👀");
+    render(order, "Mire bien… 👀");
 
     // Heart "enters" the correct gift
     const area = document.getElementById("giftArea");
@@ -783,7 +867,7 @@ function game3(){
           newW();
         }
       } else {
-        alert("Intenta otra vez 💕");
+        alert("Intente otra vez 💕");
       }
     };
   }
@@ -794,12 +878,12 @@ function game3(){
 /* 4️⃣ DADO ROMÁNTICO */
 function game4(){
   const msgs = [
-    "Hoy te gano un abrazo grande 💖",
-    "Un beso eterno para ti 😘",
+    "Un abrazo grande 💖",
+    "Un beso donde quiera😘",
     "Cita improvisada esta noche 💕",
     "Mimos todo el día ❤️",
-    "Eres mi casualidad favorita ✨",
-    "Futuro juntos brillante 💖"
+    "Lo que pida ✨",
+    "Morder a negro duro (no tanto porfis)💖"
   ];
   const n = Math.floor(Math.random()*msgs.length);
   addPoints(3);
@@ -811,14 +895,14 @@ function game4(){
 function game5(){
   // Respuestas graciosas cuando se equivoca
   const wrongMsgs = [
-    "¿Cómo que no? 😭 Eso duele más que un lunes… inténtalo otra vez 😅",
-    "Noo mi amor 🙈 ¡Esa me la tienes que saber! Jajaja 💖",
-    "¿En serio no te acuerdas? 😤 *Modo dramático activado* 😂",
-    "Ay no… me estás fallando 😭 pero igual te amo jaja ❤️",
-    "Incorrecto 😅 pero te perdono porque estás bien bonita 😘",
-    "¡Hey! Eso estaba fácil 😳 Vuelve a intentarlo, mi vida 💕",
-    "Casi… bueno, no tan casi 😂 pero inténtalo otra vez 😍",
-    "No mi reina 😌 te doy una pista: piensa en nosotros 💘"
+    "¿Jurelooooooo?… inténtale otra vez mjr",
+    "Noo mi amor ¡Esa se la tiene que saber! pesdejita 💖",
+    "¿En serio no se acuerda? 😤 *Modo dramático activado* 😂",
+    "Ay no… me esta fallando durooo 😭 pero igual la amo jaja ❤️",
+    "Incorrecto 😅 pero la perdono porque está bien bonita 😘",
+    "¡Hey! Eso estaba fácil 😡",
+    "Casi… bueno, no tan casi 😂 pero inténtelo otra vez 😍",
+    "No mi reina 😌 le doy una pista: piense en nosotros 💘"
   ];
 
   function funnyNo(goBackFnName){
@@ -909,7 +993,7 @@ function game5(){
         <div class="contract-title">Jajaja 😄</div>
         <div class="contract-line" style="line-height:1.5;">
           Para ser sincero… esa ni yo me la sabía 🙈<br>
-          pero ahora con tu respuesta ya sé 😏💖
+          pero ahora con su respuesta ya sé 😏💖
           <br><br>
           <b>Elegiste:</b> ${choice}
           <br><br>
@@ -948,7 +1032,7 @@ function game6(){
     <div class="memory-wrap">
       <h3>Memoria ❤️</h3>
       <p style="font-size:14px; line-height:1.4; margin:0 0 8px 0;">
-        Encuentra las parejas. ¡A ver qué tan bien recuerdas! 😜
+        Encuentra las parejas. ¡A ver qué tan bien recuerda! 😜
       </p>
       <div class="memory-stats">
         <span id="memTime">⏱️ 00:00</span>
@@ -1223,7 +1307,7 @@ function game9(){
       addPoints(12);
       openModal(`
         <div class="contract-paper" style="text-align:center;">
-          <div class="contract-title">🎉 ¡Lo lograste!</div>
+          <div class="contract-title">🎉 ¡Lo logro!</div>
           <div class="contract-line">Tiempo: <b>${elapsed}</b></div>
           <div class="contract-line">+12 puntos 💖</div>
           <div class="contract-actions" style="margin-top:14px;">
@@ -1293,3 +1377,549 @@ window.game3 = game3;
 window.game4 = game4;
 window.game5 = game5;
 window.game6 = game6;
+
+
+/* 🔟 AHORCADO (ORDENA/ADIVINA LA FRASE) */
+function game10(){
+  const WORDS = [
+    "DANA PAOLA",
+    "TRES MILLONES",
+    "PEQUITAS",
+    "PRINCESITA",
+    "KOASLA"
+  ];
+
+  const target = WORDS[Math.floor(Math.random()*WORDS.length)];
+  const letters = [...new Set(target.replace(/[^A-ZÑ]/g,"").split(""))];
+  const guessed = new Set();
+  const wrongGuessed = new Set();
+
+  const maxLives = 5;
+  let livesLeft = maxLives;
+
+  let seconds = 0;
+  let timer = null;
+
+  openModal(`
+    <div class="hang-wrap" id="hangWrap" style="position:relative;">
+      <h3>Ahorcado del Amor 💔</h3>
+      <p style="font-size:14px; line-height:1.4; margin-top:-4px;">
+        Adivina la palabra/frase. Cada error rompe un pedacito del corazón 😢
+      </p>
+
+      <div class="hang-heartbar" id="hangHearts" aria-label="vidas"></div>
+
+      <div style="display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap;">
+        <div class="pill" style="padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.16);">
+          ⏱️ <span id="hangTime">00:00</span>
+        </div>
+        <div class="pill" style="padding:8px 12px; border-radius:999px; background:rgba(255,255,255,.16);">
+          ❌ Errores: <span id="hangWrong">0</span> / ${maxLives}
+        </div>
+      </div>
+
+      <div class="hang-word" id="hangWord"></div>
+      <div class="hang-kb" id="hangKb"></div>
+
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin-top:4px;">
+        <button id="hangHintBtn">Pista 💡</button>
+        <button onclick="game10()">Reiniciar 🔁</button>
+        <button onclick="closeModal()">Salir</button>
+      </div>
+    </div>
+  `);
+
+  const wrap = document.getElementById("hangWrap");
+  const heartsEl = document.getElementById("hangHearts");
+  const wordEl = document.getElementById("hangWord");
+  const kbEl = document.getElementById("hangKb");
+  const timeEl = document.getElementById("hangTime");
+  const wrongEl = document.getElementById("hangWrong");
+  const hintBtn = document.getElementById("hangHintBtn");
+  let hintUsed = false;
+
+  function fmtTime(s){
+    const mm = String(Math.floor(s/60)).padStart(2,"0");
+    const ss = String(s%60).padStart(2,"0");
+    return `${mm}:${ss}`;
+  }
+
+  function startTimer(){
+    stopTimer();
+    timeEl.textContent = "00:00";
+    seconds = 0;
+    timer = setInterval(() => {
+      seconds++;
+      timeEl.textContent = fmtTime(seconds);
+    }, 1000);
+    window.__modalCleanup = stopTimer;
+  }
+
+  function stopTimer(){
+    if (timer){ clearInterval(timer); timer = null; }
+  }
+
+  function renderHearts(){
+    heartsEl.innerHTML = "";
+    for(let i=0;i<maxLives;i++){
+      const span = document.createElement("span");
+      span.className = "hang-life";
+      span.textContent = "❤️";
+      heartsEl.appendChild(span);
+    }
+  }
+
+  function breakHeart(){
+    const idx = maxLives - livesLeft; // 0..4
+    const node = heartsEl.children[idx];
+    if (!node) return;
+    node.textContent = "💔";
+    node.classList.add("break");
+  }
+
+  function spawnSad(){
+    const s = document.createElement("span");
+    s.className = "sad-pop";
+    s.textContent = ["😢","🥺","😭","💔"][Math.floor(Math.random()*4)];
+    const x = 20 + Math.random()*60; // %
+    s.style.left = x + "%";
+    s.style.top = "84px";
+    wrap.appendChild(s);
+    setTimeout(() => s.remove(), 950);
+  }
+
+  function renderWord(){
+    wordEl.innerHTML = "";
+    for (const ch of target){
+      const span = document.createElement("div");
+      if (ch === " "){
+        span.className = "hang-letter hang-space";
+        span.textContent = "";
+      } else {
+        span.className = "hang-letter";
+        span.textContent = guessed.has(ch) ? ch : "";
+      }
+      wordEl.appendChild(span);
+    }
+  }
+
+  
+  function useHint(){
+    if(!hintBtn || hintUsed) return;
+
+    const remaining = letters.filter(l => !guessed.has(l));
+    if(!remaining.length) return;
+
+    const pick = remaining[Math.floor(Math.random()*remaining.length)];
+    guessed.add(pick);
+    hintUsed = true;
+    hintBtn.disabled = true;
+
+    // mini animación de pista
+    const pop = document.createElement("span");
+    pop.className = "sad-pop";
+    pop.textContent = "💡";
+    pop.style.left = (20 + Math.random()*60) + "%";
+    pop.style.top = "84px";
+    wrap.appendChild(pop);
+    setTimeout(() => pop.remove(), 900);
+
+    renderWord();
+    if (checkWin()) endWin();
+  }
+
+function checkWin(){
+    return letters.every(l => guessed.has(l));
+  }
+
+  function endWin(){
+    stopTimer();
+    fireworks();
+    addPoints(9);
+    openModal(`
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">🎉 ¡Ganaste, mi amor!</div>
+        <div class="contract-line">Adivinaste: <b>${target}</b></div>
+        <div class="contract-line">Tiempo: <b>${fmtTime(seconds)}</b> — (+9 puntos)</div>
+        <div class="contract-actions" style="margin-top:14px;">
+          <button class="contract-btn-primary" onclick="game10()">Jugar otra vez</button>
+          <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+        </div>
+      </div>
+    `);
+  }
+
+  function endLose(){
+    stopTimer();
+    openModal(`
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">💔 Ay nooo…</div>
+        <div class="contract-line">Se rompió el corazoncito 😭</div>
+        <div class="contract-line">La respuesta era: <b>${target}</b></div>
+        <div class="contract-actions" style="margin-top:14px;">
+          <button class="contract-btn-primary" onclick="game10()">Reintentar</button>
+          <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+        </div>
+      </div>
+    `);
+  }
+
+  function guessLetter(letter, btn){
+    if (guessed.has(letter) || wrongGuessed.has(letter)) return;
+
+    if (target.includes(letter)){
+      guessed.add(letter);
+      btn.disabled = true;
+      renderWord();
+      if (checkWin()) endWin();
+    } else {
+      wrongGuessed.add(letter);
+      btn.disabled = true;
+      livesLeft--;
+      wrongEl.textContent = String(maxLives - livesLeft);
+      breakHeart();
+      spawnSad();
+      // pequeño temblor
+      wrap.animate([{transform:"translateX(0)"},{transform:"translateX(-6px)"},{transform:"translateX(6px)"},{transform:"translateX(0)"}], {duration:220});
+      if (livesLeft <= 0) endLose();
+    }
+  }
+
+  function renderKb(){
+    kbEl.innerHTML = "";
+    const abc = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split("");
+    abc.forEach(ch => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = ch;
+      b.addEventListener("click", () => guessLetter(ch, b));
+      kbEl.appendChild(b);
+    });
+  }
+
+  // init  if (hintBtn) hintBtn.addEventListener("click", useHint);
+
+  renderHearts();
+  renderWord();
+  renderKb();
+  wrongEl.textContent = "0";
+  startTimer();
+}
+
+/* 1️⃣1️⃣ SOPA DE LETRAS */
+function game11(){
+  const WORDS = ["AMOR","ROMANTICO","BESO","PECAS","CORAZON"];
+  const SIZE = 12;
+  const ALPH = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const dirs = [
+    {dx:1, dy:0}, {dx:-1, dy:0},
+    {dx:0, dy:1}, {dx:0, dy:-1},
+    {dx:1, dy:1}, {dx:-1, dy:-1},
+    {dx:1, dy:-1}, {dx:-1, dy:1},
+  ];
+
+  let grid = Array.from({length: SIZE*SIZE}, () => "");
+  let found = new Set();
+  let solutions = {}; // word -> [idx...]
+  let selecting = false;
+  let startIdx = null;
+  let currentPath = [];
+  let seconds = 0;
+  let timerId = null;
+  let awarded = false;
+
+  openModal(`
+    <div class="wordsearch-wrap">
+      <h3>Sopa de letras 🔎</h3>
+      <div class="wordsearch-meta">
+        <div><b>Tiempo:</b> <span id="wsTime">00:00</span></div>
+        <div><b>Encontradas:</b> <span id="wsCount">0</span>/${WORDS.length}</div>
+      </div>
+
+      <div class="wordsearch-grid" id="wsGrid"></div>
+
+      <div class="ws-words" id="wsWords"></div>
+
+      <div class="ws-actions">
+        <button id="wsShuffle">Nueva sopa 🔄</button>
+        <button onclick="closeModal()">Salir</button>
+      </div>
+      <p style="font-size:13px; opacity:.9; text-align:center; line-height:1.35;">
+        Toca y arrastra sobre letras en línea recta.<br>
+        También vale al revés 😉
+      </p>
+    </div>
+  `);
+
+  const gridEl = document.getElementById("wsGrid");
+  const wordsEl = document.getElementById("wsWords");
+  const timeEl = document.getElementById("wsTime");
+  const countEl = document.getElementById("wsCount");
+  const shuffleBtn = document.getElementById("wsShuffle");
+
+  function fmt(n){ return String(n).padStart(2,"0"); }
+  function updateTime(){
+    const m = Math.floor(seconds/60);
+    const s = seconds%60;
+    timeEl.textContent = `${fmt(m)}:${fmt(s)}`;
+  }
+
+  function clearTimer(){
+    if(timerId) clearInterval(timerId);
+    timerId = null;
+  }
+
+  function startTimer(){
+    clearTimer();
+    seconds = 0;
+    updateTime();
+    timerId = setInterval(() => {
+      seconds++;
+      updateTime();
+    }, 1000);
+  }
+
+  function toRC(idx){ return {r: Math.floor(idx/SIZE), c: idx%SIZE}; }
+  function toIdx(r,c){ return r*SIZE + c; }
+  function inBounds(r,c){ return r>=0 && r<SIZE && c>=0 && c<SIZE; }
+
+  function tryPlaceWord(word){
+    // attempt up to N times
+    for(let attempt=0; attempt<400; attempt++){
+      const dir = dirs[Math.floor(Math.random()*dirs.length)];
+      const dr = dir.dy, dc = dir.dx;
+
+      const maxR = dr === 1 ? SIZE - word.length : (dr === -1 ? word.length-1 : SIZE-1);
+      const minR = dr === -1 ? word.length-1 : 0;
+
+      const maxC = dc === 1 ? SIZE - word.length : (dc === -1 ? word.length-1 : SIZE-1);
+      const minC = dc === -1 ? word.length-1 : 0;
+
+      const r0 = Math.floor(Math.random() * (maxR - minR + 1)) + minR;
+      const c0 = Math.floor(Math.random() * (maxC - minC + 1)) + minC;
+
+      let ok = true;
+      let path = [];
+      for(let i=0;i<word.length;i++){
+        const r = r0 + dr*i;
+        const c = c0 + dc*i;
+        if(!inBounds(r,c)){ ok=false; break; }
+        const idx = toIdx(r,c);
+        const ch = grid[idx];
+        if(ch !== "" && ch !== word[i]){ ok=false; break; }
+        path.push(idx);
+      }
+      if(!ok) continue;
+
+      // place
+      for(let i=0;i<path.length;i++){
+        grid[path[i]] = word[i];
+      }
+      solutions[word] = path;
+      return true;
+    }
+    return false;
+  }
+
+  function buildGrid(){
+    grid = Array.from({length: SIZE*SIZE}, () => "");
+    solutions = {};
+    found = new Set();
+    awarded = false;
+
+    // place longer words first
+    const sorted = [...WORDS].sort((a,b)=>b.length-a.length);
+    for(const w of sorted){
+      const ok = tryPlaceWord(w);
+      if(!ok){
+        // fallback: reset and try again
+        return buildGrid();
+      }
+    }
+
+    // fill remaining
+    for(let i=0;i<grid.length;i++){
+      if(grid[i] === ""){
+        grid[i] = ALPH[Math.floor(Math.random()*ALPH.length)];
+      }
+    }
+  }
+
+  function render(){
+    gridEl.innerHTML = "";
+    for(let i=0;i<grid.length;i++){
+      const cell = document.createElement("div");
+      cell.className = "ws-cell";
+      cell.textContent = grid[i];
+      cell.dataset.idx = String(i);
+      gridEl.appendChild(cell);
+    }
+
+    wordsEl.innerHTML = "";
+    WORDS.forEach(w => {
+      const chip = document.createElement("div");
+      chip.className = "ws-word";
+      chip.id = "wsWord_" + w;
+      chip.textContent = w;
+      wordsEl.appendChild(chip);
+    });
+
+    countEl.textContent = "0";
+  }
+
+  function clearSelectionUI(){
+    currentPath.forEach(i => {
+      const el = gridEl.querySelector(`.ws-cell[data-idx="${i}"]`);
+      if(el && !el.classList.contains("ws-found")) el.classList.remove("ws-selected");
+    });
+    currentPath = [];
+  }
+
+  function getLinePath(a, b){
+    const A = toRC(a), B = toRC(b);
+    const dr = B.r - A.r;
+    const dc = B.c - A.c;
+
+    // must be straight line: same row, col, or diag
+    let stepR = 0, stepC = 0;
+    if(dr === 0 && dc !== 0){
+      stepR = 0; stepC = dc > 0 ? 1 : -1;
+    }else if(dc === 0 && dr !== 0){
+      stepR = dr > 0 ? 1 : -1; stepC = 0;
+    }else if(Math.abs(dr) === Math.abs(dc) && dr !== 0){
+      stepR = dr > 0 ? 1 : -1;
+      stepC = dc > 0 ? 1 : -1;
+    }else{
+      return null;
+    }
+
+    const len = Math.max(Math.abs(dr), Math.abs(dc)) + 1;
+    let path = [];
+    for(let k=0;k<len;k++){
+      const r = A.r + stepR*k;
+      const c = A.c + stepC*k;
+      if(!inBounds(r,c)) return null;
+      path.push(toIdx(r,c));
+    }
+    return path;
+  }
+
+  function pathToString(path){
+    return path.map(i => grid[i]).join("");
+  }
+
+  function markFound(word, path){
+    found.add(word);
+    path.forEach(i => {
+      const el = gridEl.querySelector(`.ws-cell[data-idx="${i}"]`);
+      if(el){
+        el.classList.remove("ws-selected");
+        el.classList.add("ws-found");
+      }
+    });
+    const chip = document.getElementById("wsWord_" + word);
+    if(chip) chip.classList.add("found");
+    countEl.textContent = String(found.size);
+
+    if(found.size === WORDS.length && !awarded){
+      awarded = true;
+      fireworks();
+      addPoints(10);
+      openModal(`
+        <div class="contract-paper" style="text-align:center;">
+          <div class="contract-title">¡Sopa completada! 💖</div>
+          <div class="contract-line">Encontraste todas las palabras (+10 puntos)</div>
+          <div class="contract-line" style="font-size:13px; opacity:.95;">
+            Tiempo: <b>${timeEl.textContent}</b>
+          </div>
+          <div class="contract-actions" style="margin-top:14px;">
+            <button class="contract-btn-primary" onclick="game11()">Jugar otra vez</button>
+            <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+          </div>
+        </div>
+      `);
+    }
+  }
+
+  function onPointerDown(e){
+    const target = e.target.closest(".ws-cell");
+    if(!target) return;
+    selecting = true;
+    gridEl.classList.add("ws-dragging");
+    startIdx = Number(target.dataset.idx);
+    clearSelectionUI();
+    currentPath = [startIdx];
+    target.classList.add("ws-selected");
+    try{ target.setPointerCapture(e.pointerId); }catch(_){}
+  }
+
+  function onPointerMove(e){
+    if(!selecting) return;
+    const el = document.elementFromPoint(e.clientX, e.clientY);
+    const target = el ? el.closest(".ws-cell") : null;
+    if(!target) return;
+    const idx = Number(target.dataset.idx);
+    if(idx === startIdx) return;
+
+    const path = getLinePath(startIdx, idx);
+    if(!path) return;
+
+    // update UI
+    clearSelectionUI();
+    currentPath = path;
+    currentPath.forEach(i => {
+      const cell = gridEl.querySelector(`.ws-cell[data-idx="${i}"]`);
+      if(cell && !cell.classList.contains("ws-found")) cell.classList.add("ws-selected");
+    });
+  }
+
+  function onPointerUp(){
+    if(!selecting) return;
+    selecting = false;
+    gridEl.classList.remove("ws-dragging");
+
+    if(currentPath.length >= 2){
+      const s = pathToString(currentPath);
+      const rev = s.split("").reverse().join("");
+
+      // check matches any word
+      const match = WORDS.find(w => !found.has(w) && (s === w || rev === w));
+      if(match){
+        // lock found cells
+        markFound(match, currentPath);
+      }
+    }
+
+    clearSelectionUI();
+    startIdx = null;
+  }
+
+  function newGame(){
+    buildGrid();
+    render();
+    startTimer();
+  }
+
+  shuffleBtn.addEventListener("click", newGame);
+
+  gridEl.addEventListener("pointerdown", onPointerDown);
+  gridEl.addEventListener("pointermove", onPointerMove);
+  gridEl.addEventListener("pointerup", onPointerUp);
+  gridEl.addEventListener("pointercancel", onPointerUp);
+  gridEl.addEventListener("pointerleave", onPointerUp);
+
+  // cleanup when modal closes
+  window.__modalCleanup = function(){
+    clearTimer();
+    try{
+      shuffleBtn.removeEventListener("click", newGame);
+      gridEl.removeEventListener("pointerdown", onPointerDown);
+      gridEl.removeEventListener("pointermove", onPointerMove);
+      gridEl.removeEventListener("pointerup", onPointerUp);
+      gridEl.removeEventListener("pointercancel", onPointerUp);
+      gridEl.removeEventListener("pointerleave", onPointerUp);
+    }catch(e){}
+  };
+
+  newGame();
+}
