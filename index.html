@@ -18,6 +18,12 @@ body{
   text-align:center;
   color:white;
   overflow-x:hidden;
+  transition:0.5s;
+}
+
+body.night{
+  background:linear-gradient(135deg,#141e30,#243b55);
+  color:#ffd1dc;
 }
 
 .container{padding:20px;max-width:700px;}
@@ -29,6 +35,7 @@ button{
   cursor:pointer;
   margin:6px;
   font-weight:bold;
+  transition:0.3s;
 }
 
 #yesBtn{background:white;color:#ff4d6d;}
@@ -36,28 +43,111 @@ button{
 
 .hidden{display:none;}
 
-.musicBtn{
-  position:fixed;
-  top:60px;
-  right:12px;
-  font-size:28px;
+.icon-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(80px,1fr));
+  gap:14px;
+  margin-top:20px;
+}
+
+.icon{
+  font-size:40px;
   cursor:pointer;
-  background:rgba(255,255,255,0.25);
-  padding:10px 14px;
+  transition:0.3s;
+}
+
+.icon:hover{transform:scale(1.25);}
+
+/* FIREWORKS */
+.firework{
+  position:fixed;
+  width:5px;
+  height:5px;
   border-radius:50%;
+  animation: explode 1s ease-out forwards;
   z-index:9999;
 }
 
+@keyframes explode {
+  0% {opacity:1; transform:translate(0,0);}
+  100% {opacity:0; transform:translate(var(--x),var(--y));}
+}
+
+.modal{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.6);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  visibility:hidden;
+  opacity:0;
+  transition:0.3s;
+  padding:20px;
+  z-index:9998;
+}
+.modal.show{visibility:visible;opacity:1;}
+
+.modal-content{
+  background:white;
+  color:#ff4d6d;
+  padding:25px;
+  border-radius:20px;
+  max-width:400px;
+  width:100%;
+}
+body.night .modal-content{
+  background:#243b55;
+  color:#ffd1dc;
+}
+
+input{
+  padding:8px;
+  width:100%;
+  margin:10px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+
+/* Corazones */
+.heart{
+  position:fixed;
+  bottom:-10px;
+  animation:floatUp linear infinite;
+  cursor:pointer;
+  font-size:25px;
+  z-index:1;
+}
+
+@keyframes floatUp{
+  0%{transform:translateY(0);opacity:1;}
+  100%{transform:translateY(-110vh);opacity:0;}
+}
+
+.toggle{
+  position:fixed;
+  top:12px;
+  right:12px;
+  cursor:pointer;
+  font-size:28px;
+  z-index:10000;
+}
+
+/* PUNTOS GLOBAL */
+#pointsDisplay{
+  font-size:20px;
+  margin-top:10px;
+}
 </style>
 </head>
 
 <body>
 
-<!-- BOTÓN MÚSICA -->
-<div class="musicBtn" id="musicBtn" onclick="toggleMusic()">🔇</div>
+<div class="toggle" id="nightToggle">🌓</div>
 
-<!-- AUDIO -->
-<audio id="bgMusic" loop>
+<!-- AUDIO (sin botón, solo inicia al tocar "Sí") -->
+<audio id="bgMusic" loop preload="auto">
   <source src="music/cancion.mp3" type="audio/mpeg">
 </audio>
 
@@ -69,20 +159,84 @@ button{
 
 <div class="container hidden" id="mainPage">
   <h2>Gracias por aceptar mi amor ❤️</h2>
-  <p>Te amo muchísimo 💕</p>
+  <div id="pointsDisplay">Puntos: 0</div>
+
+  <div class="icon-grid">
+    <div class="icon" onclick="openCalculator()">🧮</div>
+    <div class="icon" onclick="openContract()">📜</div>
+    <div class="icon" onclick="game1()">💘</div>
+    <div class="icon" onclick="game2()">🎁</div>
+    <div class="icon" onclick="game3()">🧩</div>
+    <div class="icon" onclick="game4()">🎲</div>
+    <div class="icon" onclick="game5()">❓</div>
+    <div class="icon" onclick="game6()">🔢</div>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content" id="modalContent"></div>
 </div>
 
 <script>
-
+/* ===== Referencias DOM seguras ===== */
 const startPage = document.getElementById("startPage");
 const mainPage = document.getElementById("mainPage");
-const yesBtn = document.getElementById("yesBtn");
+const pointsDisplay = document.getElementById("pointsDisplay");
+const modal = document.getElementById("modal");
+const modalContent = document.getElementById("modalContent");
 const noBtn = document.getElementById("noBtn");
+const yesBtn = document.getElementById("yesBtn");
+const nightToggle = document.getElementById("nightToggle");
 
+/* ===== Música de fondo suave ===== */
 const music = document.getElementById("bgMusic");
-const musicBtn = document.getElementById("musicBtn");
+let musicStarted = false;
 
-/* MOVER BOTÓN NO */
+function startBackgroundMusic(){
+  if(musicStarted) return;
+  music.volume = 0.18;   // 👈 volumen suave (ajústalo 0.10 - 0.30)
+  music.play().catch(()=>{ /* si el navegador bloquea, no hacemos nada */ });
+  musicStarted = true;
+}
+
+/* ===== 🌙 Dark mode ===== */
+function toggleNight(){
+  document.body.classList.toggle("night");
+}
+nightToggle.addEventListener("click", toggleNight);
+
+/* ===== Puntos ===== */
+let globalPoints = 0;
+function addPoints(n){
+  globalPoints += n;
+  pointsDisplay.innerText = "Puntos: " + globalPoints;
+}
+
+/* ===== Modal ===== */
+function openModal(c){
+  modalContent.innerHTML = c;
+  modal.classList.add("show");
+}
+function closeModal(){
+  modal.classList.remove("show");
+  window.catchFloatingHeart = null; // limpia game1 si estaba activo
+}
+modal.addEventListener("click",(e)=>{ if(e.target === modal) closeModal(); });
+
+/* ===== Corazones flotantes ===== */
+function createHeart(){
+  let h=document.createElement("div");
+  h.className="heart";
+  h.innerHTML="❤️";
+  h.style.left=Math.random()*100+"vw";
+  h.style.animationDuration=(Math.random()*3+3)+"s";
+  h.onclick=function(){ if(typeof window.catchFloatingHeart==="function") window.catchFloatingHeart(h); };
+  document.body.appendChild(h);
+  setTimeout(()=>h.remove(),6000);
+}
+setInterval(createHeart,400);
+
+/* ===== Botón NO se mueve ===== */
 function moveNo(){
   noBtn.style.left=Math.random()*(window.innerWidth-100)+"px";
   noBtn.style.top=Math.random()*(window.innerHeight-50)+"px";
@@ -90,30 +244,190 @@ function moveNo(){
 noBtn.addEventListener("mouseover",moveNo);
 noBtn.addEventListener("touchstart",(e)=>{e.preventDefault();moveNo();});
 
-/* INICIAR MÚSICA */
-function startMusic(){
-  music.play();
-  musicBtn.innerHTML="🔊";
-}
-
-/* TOGGLE MÚSICA */
-function toggleMusic(){
-  if(music.paused){
-    music.play();
-    musicBtn.innerHTML="🔊";
-  }else{
-    music.pause();
-    musicBtn.innerHTML="🔇";
-  }
-}
-
-/* BOTÓN SÍ */
+/* ===== Botón SÍ (un toque entra + inicia música) ===== */
 yesBtn.addEventListener("click",()=>{
-  startMusic();
+  startBackgroundMusic();
   startPage.classList.add("hidden");
   mainPage.classList.remove("hidden");
 });
 
+/* ===== 🧮 CALCULATOR ===== */
+function openCalculator(){
+  openModal(`
+  <h3>Nuestra fecha 💕</h3>
+  <input type="date" id="dateInput">
+  <button onclick="checkDate()">Confirmar</button>
+  <button onclick="closeModal()">Cerrar</button>
+  `);
+}
+function checkDate(){
+  let d=document.getElementById("dateInput").value;
+  if(d==="2024-04-27"){
+    addPoints(5);
+    openModal(`<h3>Perfecto ❤️</h3>
+      <p>¡Gracias por hacerme el niño mas felix durante estos casi 2 años, sin duda son el mas afortunado por tenerla conmigo, por compartr tantoss momentos increibles juntos, y espero que podamos seguir asi siempre en las buenas y malas pero juntos , la amo tres millones pecas! 💖</p>
+      <button onclick="closeModal()">Cerrar</button>`);
+  } else {
+    openModal(`<p>Inténtalo otra vez amor 💕</p><button onclick="closeModal()">Cerrar</button>`);
+  }
+}
+
+/* ===== 📜 CONTRACT + FIREWORKS ===== */
+function openContract(){
+  openModal(`
+  <h3>Contrato Oficial 💕</h3>
+  <p>Yo, Maryuri Paola Rodriguez Guiza prometo ser la San Valentín de Carlos todos los 14 de febrero por siempre ❤️</p>
+  <button onclick="sign()">Firmar 💖</button>
+  <button onclick="closeModal()">Cerrar</button>
+  `);
+}
+function sign(){
+  closeModal();
+  fireworks();
+  openModal(`
+  <h2>OFICIAL 💍❤️</h2>
+  <p>Te amo infinitamente 💕✨</p>
+  <button onclick="closeModal()">Cerrar</button>
+  `);
+  addPoints(10);
+}
+function fireworks(){
+  for(let i=0;i<50;i++){
+    let f=document.createElement("div");
+    f.className="firework";
+    f.style.top=window.innerHeight*0.5+"px";
+    f.style.left=window.innerWidth*0.5+"px";
+    f.style.setProperty('--x', (Math.random()-0.5)*500+"px");
+    f.style.setProperty('--y', (Math.random()-0.5)*500+"px");
+    f.style.background=`hsl(${Math.random()*360},100%,65%)`;
+    document.body.appendChild(f);
+    setTimeout(()=>f.remove(),1000);
+  }
+}
+
+/* ===== 🎮 GAMES ===== */
+
+/* 1️⃣ ATRAPA LOS CORAZONES */
+function game1(){
+  let score=0, goal=5;
+  openModal(`<h3>Atrapa ${goal} ❤️</h3><p id="cSc">0 / ${goal}</p><button onclick="closeModal()">Salir</button>`);
+  window.catchFloatingHeart=function(h){
+    score++;
+    h.remove();
+    const cSc = document.getElementById("cSc");
+    if(cSc) cSc.innerText = score+" / "+goal;
+    if(score>=goal){
+      addPoints(8);
+      openModal(`<h2>¡Ganado! ❤️</h2><p>¡Eres increíble! 💖</p><button onclick="closeModal()">Cerrar</button>`);
+    }
+  };
+}
+
+/* 2️⃣ DÓNDE ESTÁ EL CORAZÓN */
+function game2(){
+  let correct=Math.floor(Math.random()*3);
+  openModal(`<h3>¿Dónde está el ❤️?</h3>
+    <button onclick="pick(0)">🎁</button>
+    <button onclick="pick(1)">🎁</button>
+    <button onclick="pick(2)">🎁</button>
+    <br><br><button onclick="closeModal()">Salir</button>
+  `);
+  window.pick=function(n){
+    if(n===correct){
+      addPoints(6);
+      openModal(`<p>💘 ¡Encontraste mi corazón! 💘</p><button onclick="closeModal()">Cerrar</button>`);
+    } else {
+      openModal(`<p>Intenta otra vez 💕</p><button onclick="closeModal()">Cerrar</button>`);
+    }
+  };
+}
+
+/* 3️⃣ DESCIFRA */
+function game3(){
+  let words=["amor","vida","beso","cielo","feliz"], solved=0;
+  function newW(){
+    let w=words[Math.floor(Math.random()*words.length)];
+    let scr=w.split("").sort(()=>0.5-Math.random()).join("");
+    openModal(`<h3>Descifra 💌</h3><p>${scr}</p>
+      <input id="a" autocomplete="off">
+      <button onclick="chk()">Enviar</button>
+      <button onclick="closeModal()">Salir</button>
+    `);
+    window.chk=function(){
+      const a = document.getElementById("a");
+      if(a && a.value.toLowerCase()===w){
+        solved++;
+        addPoints(4);
+        if(solved>=5){
+          openModal(`<p>¡Felicidades! 💖</p><button onclick="closeModal()">Cerrar</button>`);
+        } else newW();
+      } else alert("Intenta otra vez 💕");
+    };
+  }
+  newW();
+}
+
+/* 4️⃣ DADO ROMÁNTICO */
+function game4(){
+  let msgs=["Hoy te gano un abrazo grande 💖","Un beso eterno para ti 😘","Cita improvisada esta noche 💕","Mimos todo el día ❤️","Eres mi casualidad favorita ✨","Futuro juntos brillante 💖"];
+  let n=Math.floor(Math.random()*msgs.length);
+  openModal(`<p>${msgs[n]}</p><button onclick="closeModal()">Cerrar</button>`);
+  addPoints(3);
+}
+
+/* 5️⃣ QUIZ DE NOSOTROS */
+function game5(){
+  openModal(`<p>¿Nuestro mes?</p>
+    <button onclick="q1(true)">Abril</button>
+    <button onclick="q1(false)">Junio</button>
+    <br><br><button onclick="closeModal()">Salir</button>
+  `);
+  window.q1=function(c){
+    if(!c){alert("No 😅");return;}
+    openModal(`<p>¿Dónde nos enamoramos?</p>
+      <button onclick="q2(true)">Colegio</button>
+      <button onclick="q2(false)">Galería</button>
+      <br><br><button onclick="closeModal()">Salir</button>
+    `);
+  };
+  window.q2=function(c){
+    if(!c){alert("Casi 😘");return;}
+    openModal(`<p>Primera cita romántica</p>
+      <button onclick="q3(true)">Cine</button>
+      <button onclick="q3(false)">Galería</button>
+      <br><br><button onclick="closeModal()">Salir</button>
+    `);
+  };
+  window.q3=function(c){
+    if(!c){alert("No 😅");return;}
+    openModal(`<p>Comida favorita</p>
+      <button onclick="food()">Pizza</button>
+      <button onclick="food()">Papitas fritas</button>
+      <br><br><button onclick="closeModal()">Salir</button>
+    `);
+  };
+  window.food=function(){
+    addPoints(5);
+    openModal(`<p>Gracias, ahora lo recordaré 😄💖</p><button onclick="closeModal()">Cerrar</button>`);
+  };
+}
+
+/* 6️⃣ ADIVINA NÚMERO */
+function game6(){
+  let num=Math.floor(Math.random()*10)+1;
+  let btns="";
+  for(let i=1;i<=10;i++){ btns+=`<button onclick="g(${i},${num})">${i}</button>`; }
+  openModal(`<h3>Adivina 🔢</h3>${btns}<br><br><button onclick="closeModal()">Salir</button>`);
+}
+window.g=function(x,num){
+  let msgs=["No es ese, pero te amo ❤️","Intenta otra vez linda 💕","Casi 😘","Muy cerca 💗","Nooo 😅","Ese no 🙈"];
+  if(x===num){
+    addPoints(7);
+    openModal(`<p>¡Correcto! ❤️✨ Te amo muchísimo 😘</p><button onclick="closeModal()">Cerrar</button>`);
+  } else {
+    openModal(`<p>${msgs[Math.floor(Math.random()*msgs.length)]}</p><button onclick="closeModal()">Intentar</button>`);
+  }
+};
 </script>
 
 </body>
