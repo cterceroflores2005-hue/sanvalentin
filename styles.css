@@ -1,0 +1,267 @@
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins',sans-serif;}
+
+body{
+  background:linear-gradient(135deg,#ff758c,#ff7eb3);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  color:white;
+  overflow-x:hidden;
+  transition:0.5s;
+}
+
+body.night{
+  background:linear-gradient(135deg,#141e30,#243b55);
+  color:#ffd1dc;
+}
+
+.container{padding:20px;max-width:700px;}
+
+button{
+  padding:10px 18px;
+  border:none;
+  border-radius:30px;
+  cursor:pointer;
+  margin:6px;
+  font-weight:bold;
+  transition:0.3s;
+}
+
+#yesBtn{background:white;color:#ff4d6d;}
+#noBtn{background:#ff4d6d;color:white;position:absolute;left:55%;top:70%;}
+
+.hidden{display:none;}
+
+.icon-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(80px,1fr));
+  gap:14px;
+  margin-top:20px;
+}
+
+.icon{
+  font-size:40px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.icon:hover{transform:scale(1.25);}
+
+/* FIREWORKS */
+.firework{
+  position:fixed;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  animation: explode 1s ease-out forwards;
+  z-index:9999;
+}
+@keyframes explode {
+  0% {opacity:1; transform:translate(0,0);}
+  100% {opacity:0; transform:translate(var(--x),var(--y));}
+}
+
+/* MODAL */
+.modal{
+  position:fixed;
+  top:0;left:0;
+  width:100%;height:100%;
+  background:rgba(0,0,0,0.6);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  visibility:hidden;
+  opacity:0;
+  transition:0.3s;
+  padding:20px;
+  z-index:9998;
+}
+.modal.show{visibility:visible;opacity:1;}
+
+.modal-content{
+  background:white;
+  color:#ff4d6d;
+  padding:25px;
+  border-radius:20px;
+  max-width:460px;
+  width:100%;
+}
+
+body.night .modal-content{
+  background:#243b55;
+  color:#ffd1dc;
+}
+
+input{
+  padding:8px;
+  width:100%;
+  margin:10px 0;
+  border-radius:10px;
+  border:1px solid #ccc;
+}
+
+/* Corazones */
+.heart{
+  position:fixed;
+  bottom:-10px;
+  animation:floatUp linear infinite;
+  cursor:pointer;
+  font-size:25px;
+  z-index:1;
+}
+@keyframes floatUp{
+  0%{transform:translateY(0);opacity:1;}
+  100%{transform:translateY(-110vh);opacity:0;}
+}
+
+.toggle{
+  position:fixed;
+  top:12px;
+  right:12px;
+  cursor:pointer;
+  font-size:28px;
+  z-index:10000;
+}
+
+/* PUNTOS GLOBAL */
+#pointsDisplay{
+  font-size:20px;
+  margin-top:10px;
+}
+
+/* ===== CONTRATO (estilo documento real) ===== */
+.contract-paper{
+  text-align:left;
+  max-height:70vh;
+  overflow:auto;
+  padding:22px 20px;
+  border-radius:16px;
+  background:#fff;
+  color:#2b2b2b;
+  border:1px solid rgba(0,0,0,0.08);
+  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
+  position:relative;
+}
+
+body.night .contract-paper{
+  background:#1f2f46;
+  color:#ffe1ea;
+  border-color: rgba(255,255,255,0.12);
+}
+
+.contract-paper:before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255,77,109,0.12), transparent 55%),
+    radial-gradient(circle at 80% 60%, rgba(255,126,179,0.10), transparent 55%);
+}
+
+.contract-title{
+  font-weight:700;
+  letter-spacing:0.6px;
+  text-align:center;
+  font-size:18px;
+  margin-bottom:8px;
+  position:relative;
+}
+
+.contract-sub{
+  text-align:center;
+  font-size:13px;
+  opacity:0.85;
+  margin-bottom:14px;
+  position:relative;
+}
+
+.contract-section{
+  margin:14px 0;
+  position:relative;
+}
+
+.contract-section h4{
+  font-size:14px;
+  margin-bottom:8px;
+  color:#ff4d6d;
+}
+
+body.night .contract-section h4{
+  color:#ffd1dc;
+}
+
+.contract-line{
+  margin:6px 0;
+  line-height:1.45;
+  font-size:13.5px;
+}
+
+.contract-label{
+  font-weight:700;
+}
+
+.contract-list{
+  margin:8px 0 0 18px;
+  font-size:13.5px;
+}
+
+.contract-actions{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:14px;
+  position:relative;
+}
+
+.contract-btn-primary{
+  background:#ff4d6d;
+  color:white;
+}
+
+.contract-btn-secondary{
+  background:rgba(0,0,0,0.08);
+  color:#333;
+}
+
+body.night .contract-btn-secondary{
+  background:rgba(255,255,255,0.14);
+  color:#ffe1ea;
+}
+
+.signature-box{
+  margin-top:14px;
+  padding:12px;
+  border-radius:12px;
+  border:1px dashed rgba(0,0,0,0.25);
+  font-size:13.5px;
+  position:relative;
+}
+
+body.night .signature-box{
+  border-color: rgba(255,255,255,0.25);
+}
+
+.signature-row{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
+.signature{
+  min-width:140px;
+  border-top:1px solid rgba(0,0,0,0.25);
+  padding-top:6px;
+  margin-top:10px;
+  font-weight:600;
+  font-size:13px;
+}
+
+body.night .signature{
+  border-top-color: rgba(255,255,255,0.25);
+}
