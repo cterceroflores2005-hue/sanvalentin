@@ -924,25 +924,169 @@ function game5(){
 }
 
 
-/* 6️⃣ ADIVINA NÚMERO */
+/* 6️⃣ MEMORIA (PAREJAS) */
 function game6(){
-  const num = Math.floor(Math.random()*10) + 1;
-  let btns = "";
-  for(let i=1;i<=10;i++){
-    btns += `<button onclick="g(${i},${num})">${i}</button>`;
-  }
-  openModal(`<h3>Adivina 🔢</h3>${btns}<br><br><button onclick="closeModal()">Salir</button>`);
-}
+  // Juego de memoria 4x4 (8 pares)
+  const icons = ["💖","💘","😍","😘","🌹","🍫","🎶","🧸"];
+  let deck = [...icons, ...icons];
 
-window.g = function(x, num){
-  const msgs = ["No es ese, pero te amo ❤️","Intenta otra vez linda 💕","Casi 😘","Muy cerca 💗","Nooo 😅","Ese no 🙈"];
-  if(x === num){
-    addPoints(7);
-    openModal(`<p>¡Correcto! ❤️✨ Te amo muchísimo 😘</p><button onclick="closeModal()">Cerrar</button>`);
-  } else {
-    openModal(`<p>${msgs[Math.floor(Math.random()*msgs.length)]}</p><button onclick="closeModal()">Intentar</button>`);
+  // Barajar
+  for(let i=deck.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
   }
-};
+
+  let first = null;
+  let second = null;
+  let lock = false;
+  let matched = 0;
+  let moves = 0;
+  let seconds = 0;
+  let awarded = false;
+
+  openModal(`
+    <div class="memory-wrap">
+      <h3>Memoria ❤️</h3>
+      <p style="font-size:14px; line-height:1.4; margin:0 0 8px 0;">
+        Encuentra las parejas. ¡A ver qué tan bien recuerdas! 😜
+      </p>
+      <div class="memory-stats">
+        <span id="memTime">⏱️ 00:00</span>
+        <span id="memMoves">🃏 Movidas: 0</span>
+      </div>
+      <div class="memory-board" id="memoryBoard"></div>
+      <div class="memory-actions">
+        <button id="memRestart">Reiniciar 🔁</button>
+        <button onclick="closeModal()">Salir</button>
+      </div>
+    </div>
+  `);
+
+  const board = document.getElementById("memoryBoard");
+  const timeEl = document.getElementById("memTime");
+  const movesEl = document.getElementById("memMoves");
+  const restartBtn = document.getElementById("memRestart");
+
+  function pad(n){ return String(n).padStart(2,"0"); }
+  function renderTime(){
+    const mm = Math.floor(seconds/60);
+    const ss = seconds%60;
+    timeEl.textContent = `⏱️ ${pad(mm)}:${pad(ss)}`;
+  }
+  function renderMoves(){
+    movesEl.textContent = `🃏 Movidas: ${moves}`;
+  }
+
+  let timer = setInterval(() => {
+    seconds++;
+    renderTime();
+  }, 1000);
+
+  // Asegura que al cerrar el modal se pare el timer (sin afectar otros juegos)
+  window.__modalCleanup = function(){
+    clearInterval(timer);
+  };
+
+  function cardHTML(idx){
+    return `
+      <button class="memory-card" data-idx="${idx}" aria-label="Carta">
+        <span class="memory-front">?</span>
+        <span class="memory-back">${deck[idx]}</span>
+      </button>
+    `;
+  }
+
+  function render(){
+    board.innerHTML = deck.map((_,i)=>cardHTML(i)).join("");
+    board.querySelectorAll(".memory-card").forEach(btn=>{
+      btn.addEventListener("click", onCardClick);
+    });
+    renderTime();
+    renderMoves();
+  }
+
+  function setRevealed(btn, yes){
+    btn.classList.toggle("revealed", !!yes);
+  }
+  function setMatched(btn, yes){
+    btn.classList.toggle("matched", !!yes);
+    btn.disabled = !!yes;
+  }
+
+  function onCardClick(e){
+    const btn = e.currentTarget;
+    const idx = Number(btn.dataset.idx);
+
+    if(lock) return;
+    if(btn.classList.contains("matched")) return;
+    if(first && first.idx === idx) return;
+
+    setRevealed(btn, true);
+
+    if(!first){
+      first = { idx, btn };
+      return;
+    }
+
+    second = { idx, btn };
+    moves++;
+    renderMoves();
+
+    const a = deck[first.idx];
+    const b = deck[second.idx];
+
+    if(a === b){
+      setMatched(first.btn, true);
+      setMatched(second.btn, true);
+      matched += 2;
+      first = null; second = null;
+
+      if(matched === deck.length && !awarded){
+        awarded = true;
+        clearInterval(timer);
+        fireworks();
+        addPoints(10);
+        openModal(`
+          <div class="contract-paper" style="text-align:center;">
+            <div class="contract-title">🎉 ¡Memoria perfecta!</div>
+            <div class="contract-line">Tiempo: <b>${timeEl.textContent.replace("⏱️ ","")}</b></div>
+            <div class="contract-line">Movidas: <b>${moves}</b></div>
+            <div class="contract-line">+10 puntos 💖</div>
+            <div class="contract-actions" style="margin-top:14px;">
+              <button class="contract-btn-primary" onclick="game6()">Jugar otra vez</button>
+              <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+            </div>
+          </div>
+        `);
+      }
+      return;
+    }
+
+    lock = true;
+    setTimeout(()=>{
+      setRevealed(first.btn, false);
+      setRevealed(second.btn, false);
+      first = null; second = null;
+      lock = false;
+    }, 650);
+  }
+
+  function restart(){
+    // rebarajar y reiniciar estado
+    for(let i=deck.length-1;i>0;i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [deck[i], deck[j]] = [deck[j], deck[i]];
+    }
+    first = null; second = null; lock = false; matched = 0; moves = 0; seconds = 0; awarded = false;
+    clearInterval(timer);
+    timer = setInterval(()=>{ seconds++; renderTime(); }, 1000);
+    window.__modalCleanup = function(){ clearInterval(timer); };
+    render();
+  }
+
+  restartBtn.addEventListener("click", restart);
+  render();
+}
 
 
 /* 9️⃣ ROMPECABEZAS (4x4 + TIEMPO) */
