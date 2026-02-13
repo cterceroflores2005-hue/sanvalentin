@@ -1,52 +1,49 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>San Valentín ❤️</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-  <div class="toggle" id="nightToggle" title="Modo noche">🌓</div>
+<div class="toggle" id="nightToggle">🌓</div>
 
-  <!-- AUDIO: inicia solo cuando toca "Sí" -->
-  <audio id="bgMusic" loop preload="auto">
-    <source src="music/cancion.mp3" type="audio/mpeg">
-  </audio>
+<audio id="bgMusic" loop preload="auto">
+  <source src="music/cancion.mp3" type="audio/mpeg">
+</audio>
 
-  <div class="container" id="startPage">
-    <h1>Maryuri Paola Rodriguez Guiza ❤️<br>¿Quieres ser mi San Valentín?</h1>
-    <button id="yesBtn">Sí 💖</button>
-    <button id="noBtn">No 😢</button>
+<div class="container" id="startPage">
+  <h1>Maryuri Paola Rodriguez Guiza ❤️<br>¿Quieres ser mi San Valentín?</h1>
+  <button id="yesBtn">Sí 💖</button>
+  <button id="noBtn">No 😢</button>
+</div>
+
+<div class="container hidden" id="mainPage">
+  <h2>Gracias por aceptar mi amor ❤️</h2>
+  <div id="pointsDisplay">Puntos: 0</div>
+
+  <div class="icon-grid">
+    <div class="icon" onclick="openCalculator()">🧮</div>
+    <div class="icon" onclick="openContract()">📜</div>
+    <div class="icon" onclick="game1()">💘</div>
+    <div class="icon" onclick="game2()">🎁</div>
+    <div class="icon" onclick="game3()">🧩</div>
+    <div class="icon" onclick="game4()">🎲</div>
+    <div class="icon" onclick="game5()">❓</div>
+    <div class="icon" onclick="game6()">🔢</div>
+    <div class="icon" onclick="game7()">🧩✨</div>
   </div>
+</div>
 
-  <div class="container hidden" id="mainPage">
-    <h2>Gracias por aceptar mi amor ❤️</h2>
-    <div id="pointsDisplay">Puntos: 0</div>
+<div class="modal" id="modal">
+  <div class="modal-content" id="modalContent"></div>
+</div>
 
-    <div class="icon-grid">
-      <div class="icon" onclick="openCalculator()">🧮</div>
-      <div class="icon" onclick="openContract()">📜</div>
-      <div class="icon" onclick="game1()">💘</div>
-      <div class="icon" onclick="game2()">🎁</div>
-      <div class="icon" onclick="game3()">🧩</div>
-      <div class="icon" onclick="game4()">🎲</div>
-      <div class="icon" onclick="game5()">❓</div>
-      <div class="icon" onclick="game6()">🔢</div>
-    </div>
-  </div>
-
-  <div class="modal" id="modal">
-    <div class="modal-content" id="modalContent"></div>
-  </div>
-
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
