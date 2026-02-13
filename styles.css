@@ -315,3 +315,90 @@ body.night .gift-btn{
   justify-content:center;
   flex-wrap:wrap;
 }
+
+
+/* =========================
+   MEMORIA (PAREJAS)
+========================= */
+.memory-wrap{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  align-items:center;
+}
+
+.memory-stats{
+  width:min(360px, 90vw);
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-size:14px;
+  opacity:0.95;
+}
+
+.memory-board{
+  width:min(360px, 90vw);
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:10px;
+  user-select:none;
+}
+
+.memory-card{
+  border:none;
+  border-radius:16px;
+  padding:0;
+  aspect-ratio:1/1;
+  cursor:pointer;
+  position:relative;
+  background:rgba(255,255,255,0.12);
+  border:2px solid rgba(255,255,255,0.28);
+  transition:transform .12s ease, filter .12s ease;
+  font-size:28px;
+}
+
+.memory-card:hover{ transform:scale(1.02); }
+.memory-card:active{ transform:scale(0.98); }
+
+.memory-front, .memory-back{
+  position:absolute;
+  inset:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:14px;
+}
+
+.memory-front{
+  font-size:22px;
+  opacity:0.9;
+}
+
+.memory-back{
+  transform:scale(0.8);
+  opacity:0;
+  transition:opacity .18s ease, transform .18s ease;
+}
+
+.memory-card.revealed .memory-back,
+.memory-card.matched .memory-back{
+  opacity:1;
+  transform:scale(1);
+}
+
+.memory-card.revealed .memory-front,
+.memory-card.matched .memory-front{
+  opacity:0;
+}
+
+.memory-card.matched{
+  filter:brightness(1.08);
+  cursor:default;
+}
+
+.memory-actions{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
