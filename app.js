@@ -11,9 +11,11 @@ const yesBtn = document.getElementById("yesBtn");
 const nightToggle = document.getElementById("nightToggle");
 const music = document.getElementById("bgMusic");
 
-// Control para evitar cerrar modal al tocar afuera (útil para minijuegos)
+// Bloquea cerrar modal tocando afuera (útil para minijuegos)
 let modalBackdropCloseEnabled = true;
+// Indica si el juego de atrapar corazones está corriendo
 let isCatchGameRunning = false;
+
 
 /* =========================
    MÚSICA DE FONDO (suave)
@@ -58,6 +60,10 @@ function openModal(html){
 
 function closeModal(){
   modal.classList.remove("show");
+  if (typeof window.__modalCleanup === "function") {
+    try { window.__modalCleanup(); } catch(e) {}
+  }
+  window.__modalCleanup = null;
   window.catchFloatingHeart = null;
 }
 
@@ -73,11 +79,13 @@ function createHeart(){
   const h = document.createElement("div");
   h.className = "heart";
   h.innerHTML = "❤️";
-  
+
+  // Si está corriendo el minijuego, que el corazón quede sobre el modal
   if (isCatchGameRunning) {
     h.style.zIndex = "10005";
   }
-h.style.left = Math.random() * 100 + "vw";
+
+  h.style.left = Math.random() * 100 + "vw";
   h.style.animationDuration = (Math.random() * 3 + 3) + "s";
 
   h.onclick = function(){
@@ -450,7 +458,6 @@ function game1(){
     running = false;
     isCatchGameRunning = false;
     modalBackdropCloseEnabled = true;
-
     window.catchFloatingHeart = null;
     if(timerId) clearInterval(timerId);
     timerId = null;
@@ -463,10 +470,62 @@ function game1(){
     if(tLeft) tLeft.innerText = `${timeLeft}s`;
   }
 
+  function startGame(){
+    if(running) return;
+    running = true;
+    isCatchGameRunning = true;
+    modalBackdropCloseEnabled = false;
+    score = 0;
+    timeLeft = 15;
+    updateUI();
+
+    // Captura corazones flotantes SOLO cuando está corriendo
+    window.catchFloatingHeart = function(h){
+      if(!running) return;
+
+      score++;
+      const rect = h.getBoundingClientRect();
+      const x = rect.left + rect.width/2;
+      const y = rect.top + rect.height/2;
+
+      // Quitar corazón y hacer explosión + mensaje
+      h.remove();
+      heartPop(x, y);
+
+      updateUI();
+
+      if(score >= goal){
+        stopGame();
+        addPoints(8);
+        openModal(`
+          <h2>¡Ganado! ❤️</h2>
+          <p>¡Lo lograste en tiempo! 💖</p>
+          <button onclick="closeModal()">Cerrar</button>
+        `);
+      }
+    };
+
+    // Cuenta regresiva
+    timerId = setInterval(()=>{
+      timeLeft--;
+      updateUI();
+
+      if(timeLeft <= 0){
+        stopGame();
+        openModal(`
+          <h2>Se acabó el tiempo ⏳</h2>
+          <p>Atrapaste <b>${score}</b> de <b>${goal}</b>. Intenta otra vez amor 💕</p>
+          <button onclick="closeModal()">Cerrar</button>
+        `);
+      }
+    }, 1000);
+  }
+
   function heartPop(x, y){
+    // Partículas corazón
     for(let i=0;i<14;i++){
       const p = document.createElement("div");
-      p.className = "firework";
+      p.className = "firework"; // reutilizamos tu estilo firework
       p.style.left = x + "px";
       p.style.top = y + "px";
       p.style.setProperty("--x", (Math.random()-0.5)*220 + "px");
@@ -476,6 +535,7 @@ function game1(){
       setTimeout(()=>p.remove(), 1000);
     }
 
+    // Mensaje bonito en el punto
     const msg = document.createElement("div");
     msg.innerText = loveMsgs[Math.floor(Math.random()*loveMsgs.length)];
     msg.style.position = "fixed";
@@ -486,15 +546,17 @@ function game1(){
     msg.style.fontSize = "15px";
     msg.style.padding = "6px 10px";
     msg.style.borderRadius = "14px";
-    msg.style.background = "rgba(255,255,255,0.90)";
+    msg.style.background = "rgba(255,255,255,0.85)";
     msg.style.color = "#ff4d6d";
     msg.style.boxShadow = "0 8px 18px rgba(0,0,0,0.18)";
-    msg.style.zIndex = "10006";
+    msg.style.zIndex = "10001";
     msg.style.pointerEvents = "none";
     msg.style.opacity = "0";
     msg.style.transition = "opacity .15s ease, transform .7s ease";
+
     document.body.appendChild(msg);
 
+    // Animación (sube y se desvanece)
     requestAnimationFrame(()=>{
       msg.style.opacity = "1";
       msg.style.transform = "translate(-50%, -90%)";
@@ -505,99 +567,36 @@ function game1(){
       msg.style.transform = "translate(-50%, -130%)";
     }, 650);
 
-    setTimeout(()=>msg.remove(), 950);
+    setTimeout(()=>msg.remove(), 900);
   }
 
-  function startGame(){
-    if(running) return;
-    running = true;
-    score = 0;
-    timeLeft = 15;
-
-    isCatchGameRunning = true;
-    modalBackdropCloseEnabled = false;
-
-    updateUI();
-
-    window.catchFloatingHeart = function(h){
-      if(!running) return;
-
-      score++;
-
-      const rect = h.getBoundingClientRect();
-      const x = rect.left + rect.width/2;
-      const y = rect.top + rect.height/2;
-
-      h.remove();
-      heartPop(x, y);
-      updateUI();
-
-      if(score >= goal){
-        stopGame();
-        addPoints(8);
-        openModal(`
-          <div class="contract-paper" style="text-align:center;">
-            <div class="contract-title">¡Ganado! ❤️</div>
-            <div class="contract-line">¡Lo lograste en tiempo! 💖</div>
-            <div class="contract-actions" style="margin-top:14px;">
-              <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
-            </div>
-          </div>
-        `);
-      }
-    };
-
-    timerId = setInterval(()=>{
-      timeLeft--;
-      updateUI();
-
-      if(timeLeft <= 0){
-        stopGame();
-        openModal(`
-          <div class="contract-paper" style="text-align:center;">
-            <div class="contract-title">Se acabó el tiempo ⏳</div>
-            <div class="contract-line">
-              Atrapaste <b>${score}</b> de <b>${goal}</b>. Intenta otra vez amor 💕
-            </div>
-            <div class="contract-actions" style="margin-top:14px;">
-              <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
-            </div>
-          </div>
-        `);
-      }
-    }, 1000);
-  }
-
+  // Abrimos modal inicial con botón iniciar
   openModal(`
-    <div class="contract-paper" style="text-align:center;">
-      <div class="contract-title">Atrapa ${goal} ❤️</div>
-      <div class="contract-line">Tiempo: <b id="tLeft">15s</b></div>
-      <div class="contract-line" id="cSc">0 / ${goal}</div>
-      <div class="contract-actions" style="margin-top:14px;">
-        <button class="contract-btn-primary" onclick="startCatchGame()">Iniciar ▶️</button>
-        <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-      </div>
-    </div>
+    <h3>Atrapa ${goal} ❤️</h3>
+    <p>Tiempo: <b id="tLeft">15s</b></p>
+    <p id="cSc">0 / ${goal}</p>
+    <button onclick="startCatchGame()">Iniciar ▶️</button>
+    <button onclick="closeModal()">Salir</button>
   `);
 
+  // Hacemos accesible el iniciar desde el botón del modal
   window.startCatchGame = function(){
     startGame();
+    // Cambiar el contenido del modal a "en juego"
     openModal(`
-      <div class="contract-paper" style="text-align:center;">
-        <div class="contract-title">¡Corre! 😍</div>
-        <div class="contract-line">Tiempo: <b id="tLeft">${timeLeft}s</b></div>
-        <div class="contract-line" id="cSc">${score} / ${goal}</div>
-        <div class="contract-line" style="opacity:.9;">Atrapa 5 corazones en 15 segundos 💘</div>
-        <div class="contract-actions" style="margin-top:14px;">
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
+      <h3>¡Corre! 😍</h3>
+      <p>Tiempo: <b id="tLeft">${timeLeft}s</b></p>
+      <p id="cSc">${score} / ${goal}</p>
+      <p style="opacity:.9;">Atrapa 5 corazones en 15 segundos 💘</p>
+      <button onclick="closeModal()">Salir</button>
     `);
   };
 
+  // Al cerrar modal: detener todo
   const oldClose = window.closeModal;
   window.closeModal = function(){
     stopGame();
+    // restaurar closeModal original
     window.closeModal = oldClose;
     oldClose();
   };
@@ -606,24 +605,153 @@ function game1(){
 
 /* 2️⃣ DÓNDE ESTÁ EL CORAZÓN */
 function game2(){
-  const correct = Math.floor(Math.random()*3);
+  // Gift IDs stay attached to the "real" boxes; we shuffle the visual order.
+  let giftIds = [0,1,2];
+  let correctGiftId = null;
+  let canPick = false;
+  let shuffleTimer = null;
 
-  openModal(`
-    <h3>¿Dónde está el ❤️?</h3>
-    <button onclick="pick(0)">🎁</button>
-    <button onclick="pick(1)">🎁</button>
-    <button onclick="pick(2)">🎁</button>
-    <br><br><button onclick="closeModal()">Salir</button>
-  `);
+  function render(order, statusText){
+    openModal(`
+      <h3>¿Dónde está el ❤️?</h3>
 
-  window.pick = function(n){
-    if(n === correct){
-      addPoints(6);
-      openModal(`<p>💘 ¡Encontraste mi corazón! 💘</p><button onclick="closeModal()">Cerrar</button>`);
+      <div class="gift-area" id="giftArea">
+        <div class="heart-fly" id="heartFly">❤️</div>
+
+        ${order.map(id => `
+          <button class="gift-btn ${canPick ? "" : "disabled"}" data-gift="${id}" onclick="pickGift(${id})">🎁</button>
+        `).join("")}
+      </div>
+
+      <div class="game2-status" id="game2Status">${statusText || ""}</div>
+
+      <br>
+      <button onclick="closeModal()">Salir</button>
+    `);
+  }
+
+  function setStatus(t){
+    const el = document.getElementById("game2Status");
+    if(el) el.textContent = t;
+  }
+
+  function setShuffle(on){
+    const area = document.getElementById("giftArea");
+    if(!area) return;
+    area.classList.toggle("shuffling", !!on);
+  }
+
+  function randomOrder(){
+    return giftIds.slice().sort(()=>Math.random()-0.5);
+  }
+
+  function startRound(){
+    // stop pending
+    if(shuffleTimer) clearTimeout(shuffleTimer);
+    canPick = false;
+
+    correctGiftId = giftIds[Math.floor(Math.random()*giftIds.length)];
+    let order = randomOrder();
+    render(order, "Mira bien… 👀");
+
+    // Heart "enters" the correct gift
+    const area = document.getElementById("giftArea");
+    const heart = document.getElementById("heartFly");
+    const targetBtn = area?.querySelector(`.gift-btn[data-gift="${correctGiftId}"]`);
+
+    if(area && heart && targetBtn){
+      const areaRect = area.getBoundingClientRect();
+      const tRect = targetBtn.getBoundingClientRect();
+
+      const targetX = (tRect.left + tRect.width/2) - areaRect.left;
+      const targetY = (tRect.top + tRect.height/2) - areaRect.top;
+
+      heart.style.opacity = "1";
+      heart.style.left = "50%";
+      heart.style.top = "-6px";
+      heart.style.transform = "translate(-50%,0) scale(1)";
+
+      // animate into gift
+      heart.animate(
+        [
+          { transform:"translate(-50%,0) scale(1)", opacity: 1 },
+          { transform:`translate(${targetX - areaRect.width/2}px, ${targetY + 10}px) scale(0.25)`, opacity: 0.0 }
+        ],
+        { duration: 700, easing: "cubic-bezier(.2,.8,.2,1)", fill:"forwards" }
+      );
+
+      shuffleTimer = setTimeout(()=>{
+        // shuffle animation
+        setStatus("Mezclando… 🔀");
+        setShuffle(true);
+
+        setTimeout(()=>{
+          setShuffle(false);
+
+          // re-render with a new random order (visual shuffle)
+          const newOrder = randomOrder();
+          render(newOrder, "Ahora elige un regalo 🎁💕");
+
+          // enable picks
+          canPick = true;
+          // update button states
+          document.querySelectorAll(".gift-btn").forEach(b=>b.classList.remove("disabled"));
+        }, 900);
+
+      }, 750);
     } else {
-      openModal(`<p>Intenta otra vez 💕</p><button onclick="closeModal()">Cerrar</button>`);
+      // fallback without animation
+      setStatus("Mezclando… 🔀");
+      setTimeout(()=>{
+        render(randomOrder(), "Ahora elige un regalo 🎁💕");
+        canPick = true;
+        document.querySelectorAll(".gift-btn").forEach(b=>b.classList.remove("disabled"));
+      }, 700);
+    }
+  }
+
+  function wrongFlow(){
+    canPick = false;
+    document.querySelectorAll(".gift-btn").forEach(b=>b.classList.add("disabled"));
+    setStatus("🎁 Ups… inténtalo de nuevo 💕");
+    // reshuffle again after a moment
+    setTimeout(()=>startRound(), 900);
+  }
+
+  // Expose picker for inline onclicks in modal
+  window.pickGift = function(giftId){
+    if(!canPick) return;
+
+    if(giftId === correctGiftId){
+      addPoints(6);
+      openModal(`
+  <div class="contract-paper" style="max-height:65vh;">
+    <div class="contract-title">💘 ¡Encontraste mi corazón! 💘</div>
+    <div class="contract-line" style="text-align:left; font-size:14px; line-height:1.65;">
+      Sabía que lo iba a lograr, porque siempre logra todo lo que se propone. Desde que la conozco he visto en usted una fuerza que pocas personas tienen, una valentía que inspira y un corazón enorme que no se rinde jamás. Siempre he sabido que es capaz de todo, porque cuando se fija una meta, no hay obstáculo lo suficientemente grande que pueda detenerla.
+      <br><br>
+      Desde el primer día noté que no era como las demás. Usted es esa niña fuerte, valiente y guapaaa —como siempre se lo he dicho— pero no solo guapa por fuera, sino increíblemente hermosa por dentro. Tiene una luz que brilla incluso en los momentos más oscuros. Y aunque la vida le haya puesto pruebas difíciles, aunque haya tenido que enfrentar tantos y tantos problemas, jamás ha dejado que eso le quite las ganas de seguir luchando.
+      <br><br>
+      Mi flaquita hermosa, admiro su manera de levantarse cada vez que algo intenta derrumbarla. Admiro su coraje, su determinación y esa fuerza silenciosa que lleva dentro. Sé que no se rinde y que no se va a rendir jamás, porque está hecha de algo especial. Es más fuerte de lo que cree, más valiente de lo que imagina y más capaz de lo que a veces usted misma puede ver.
+      <br><br>
+      Gracias por ser esa niña fuerte que lucha por sus sueños. Gracias por demostrarme todos los días que la perseverancia y el corazón pueden más que cualquier dificultad. Gracias por enorgullecerme a diario con cada paso que da, con cada logro, con cada batalla que decide enfrentar con la frente en alto.
+      <br><br>
+      Gracias por ser usted, por su sonrisa, por su ternura, por su carácter, por su luz. Gracias por enseñarme que rendirse no es una opción cuando se tiene un corazón tan grande como el suyo. Estoy inmensamente orgulloso de usted y siempre voy a estar aquí, admirándola, apoyándola y celebrando cada uno de sus triunfos.
+      <br><br>
+      <b>Nunca olvide lo increíble que es. ✨</b>
+    </div>
+    <div class="contract-actions" style="margin-top:14px;">
+      <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
+    </div>
+  </div>
+`);
+} else {
+      wrongFlow();
     }
   };
+
+  // Start the first round
+  startRound();
 }
 
 /* 3️⃣ DESCIFRA */
@@ -631,119 +759,32 @@ function game3(){
   const words = ["amor","vida","beso","cielo","feliz"];
   let solved = 0;
 
-  const encourageMsgs = [
-    "Casi mi amor 💕 ¡Inténtalo otra vez, tú puedes!",
-    "No pasa nada 😘 A veces el amor se descifra con calma.",
-    "Uy 🙈 ¡Pero yo sé que lo lograrás! Intenta de nuevo 💖",
-    "Respira bonito ✨ y vuelve a intentarlo, confío en ti ❤️",
-    "Mi flaquita hermosa, tú eres capaz de todo 🥰 ¡otra vez!",
-    "Te quedaste cerquita 💗 ¡inténtalo una vez más!"
-  ];
-
-  function showTryAgain(){
-    const msg = encourageMsgs[Math.floor(Math.random()*encourageMsgs.length)];
-    openModal(`
-      <div class="contract-paper" style="text-align:left;">
-        <div class="contract-title">💌 Intenta otra vez</div>
-        <div class="contract-line" style="line-height:1.6;">${msg}</div>
-        <div class="contract-actions" style="margin-top:14px;">
-          <button class="contract-btn-primary" onclick="continueDecipher()">Seguir intentando 💖</button>
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
-    `);
-  }
-
-  function showFinish(){
-    openModal(`
-      <div class="contract-paper" style="text-align:left;">
-        <div class="contract-title">🎉 ¡Lo lograste! 💖</div>
-        <div class="contract-line" style="line-height:1.6;">
-          Eres increíble 😍 Ahora quiero saber algo…
-        </div>
-
-        <div class="contract-line" style="margin-top:10px; line-height:1.6;">
-          <b>Escribe una cosa que tú quieras</b> (puede ser un antojo, una cita, un plan, lo que sea) 💞
-        </div>
-
-        <input id="wishInput" placeholder="Escribe aquí..." style="margin-top:10px;">
-
-        <div class="contract-actions" style="margin-top:14px;">
-          <button class="contract-btn-primary" onclick="submitWish()">Aceptar ✅</button>
-          <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
-        </div>
-      </div>
-    `);
-  }
-
-  function showWishThanks(wish){
-    const safeWish = (wish || "").replace(/[<>]/g,"");
-    openModal(`
-      <div class="contract-paper" style="text-align:left;">
-        <div class="contract-title">💗 Anotado, mi amor</div>
-        <div class="contract-line" style="line-height:1.7;">
-          Me encanta 😘<br><br>
-          <b>Lo que tú quieres:</b><br>
-          “${safeWish || "❤️"}”
-        </div>
-        <div class="contract-line" style="margin-top:10px; line-height:1.6;">
-          Gracias por jugar conmigo. Te amo muchísimo ✨
-        </div>
-        <div class="contract-actions" style="margin-top:14px;">
-          <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
-        </div>
-      </div>
-    `);
-  }
-
   function newW(){
     const w = words[Math.floor(Math.random()*words.length)];
     const scr = w.split("").sort(()=>0.5-Math.random()).join("");
 
     openModal(`
-      <div class="contract-paper" style="text-align:center;">
-        <div class="contract-title">🧩 Descifra 💌</div>
-        <div class="contract-line" style="text-align:center;">
-          <b>${solved}</b> / <b>5</b> correctas
-        </div>
-        <div class="contract-line" style="font-size:22px; text-align:center; letter-spacing:2px;">
-          ${scr}
-        </div>
-        <input id="a" autocomplete="off" placeholder="Escribe la palabra...">
-        <div class="contract-actions">
-          <button class="contract-btn-primary" onclick="chk()">Enviar</button>
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
+      <h3>Descifra 💌</h3>
+      <p>${scr}</p>
+      <input id="a" autocomplete="off">
+      <button onclick="chk()">Enviar</button>
+      <button onclick="closeModal()">Salir</button>
     `);
 
     window.chk = function(){
       const a = document.getElementById("a");
-      const guess = a ? a.value.toLowerCase().trim() : "";
-      if(guess === w){
+      if(a && a.value.toLowerCase() === w){
         solved++;
         addPoints(4);
 
         if(solved >= 5){
-          // final
-          window.continueDecipher = null;
-          showFinish();
+          openModal(`<p>¡Felicidades! 💖</p><button onclick="closeModal()">Cerrar</button>`);
         } else {
           newW();
         }
       } else {
-        // modal bonito con ánimo + botón seguir
-        window.continueDecipher = function(){
-          newW();
-        };
-        showTryAgain();
+        alert("Intenta otra vez 💕");
       }
-    };
-
-    window.submitWish = function(){
-      const inp = document.getElementById("wishInput");
-      const wish = inp ? inp.value.trim() : "";
-      showWishThanks(wish);
     };
   }
 
@@ -768,162 +809,47 @@ function game4(){
 
 /* 5️⃣ QUIZ DE NOSOTROS */
 function game5(){
-  // Helpers para modales bonitos del quiz
-  function prettyBox(title, body, extraButtonsHtml=""){
+  openModal(`
+    <p>¿Nuestro mes?</p>
+    <button onclick="q1(true)">Abril</button>
+    <button onclick="q1(false)">Junio</button>
+    <br><br><button onclick="closeModal()">Salir</button>
+  `);
+
+  window.q1 = function(c){
+    if(!c){ alert("No 😅"); return; }
     openModal(`
-      <div class="contract-paper quiz-paper">
-        <div class="contract-title">${title}</div>
-        <div class="contract-line">${body}</div>
-        <div class="contract-actions" style="margin-top:12px;">
-          ${extraButtonsHtml}
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
+      <p>¿Dónde nos enamoramos?</p>
+      <button onclick="q2(true)">Colegio</button>
+      <button onclick="q2(false)">Galería</button>
+      <br><br><button onclick="closeModal()">Salir</button>
     `);
-  }
-
-  function wrong(msg, retryFnName){
-    openModal(`
-      <div class="contract-paper quiz-paper" style="text-align:center;">
-        <div class="contract-title">🎁 Ups…</div>
-        <div class="contract-line">${msg}</div>
-        <div class="contract-actions" style="margin-top:12px;">
-          <button class="contract-btn-primary" onclick="${retryFnName}()">Intentar de nuevo 💕</button>
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
-    `);
-  }
-
-  // Pregunta 1
-  function qMonth(){
-    openModal(`
-      <div class="contract-paper quiz-paper">
-        <div class="contract-title">❓ Quiz de nosotros</div>
-        <div class="contract-line"><b>¿Nuestro mes?</b></div>
-        <div class="option-grid">
-          <button class="option-btn" onclick="q1(true)">Abril</button>
-          <button class="option-btn" onclick="q1(false)">Junio</button>
-        </div>
-        <div class="contract-actions" style="margin-top:12px;">
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
-    `);
-  }
-
-  // Pregunta 2
-  function qWhere(){
-    openModal(`
-      <div class="contract-paper quiz-paper">
-        <div class="contract-title">💖 Vamos bien</div>
-        <div class="contract-line"><b>¿Dónde nos enamoramos?</b></div>
-        <div class="option-grid">
-          <button class="option-btn" onclick="q2(true)">Colegio</button>
-          <button class="option-btn" onclick="q2(false)">Galería</button>
-        </div>
-        <div class="contract-actions" style="margin-top:12px;">
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
-    `);
-  }
-
-  // Pregunta 3
-  function qFirstDate(){
-    openModal(`
-      <div class="contract-paper quiz-paper">
-        <div class="contract-title">🥰 Casi casi</div>
-        <div class="contract-line"><b>Primera cita romántica</b></div>
-        <div class="option-grid">
-          <button class="option-btn" onclick="q3(true)">Cine</button>
-          <button class="option-btn" onclick="q3(false)">Galería</button>
-        </div>
-        <div class="contract-actions" style="margin-top:12px;">
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
-    `);
-  }
-
-  // Pregunta 4 (comida con 12 opciones: 2 + 10 nuevas)
-  const foods = [
-    "Pizza",
-    "Papitas fritas",
-    "Hamburguesa",
-    "Tacos",
-    "Sushi",
-    "Pasta",
-    "Pollo frito",
-    "Helado",
-    "Enchiladas",
-    "Baleadas",
-    "Pupusas",
-    "Chocolate"
-  ];
-
-  function qFood(){
-    let btns = foods.map(f => `<button class="option-btn" onclick="food('${f.replace(/'/g,"&#39;")}')">${f}</button>`).join("");
-    openModal(`
-      <div class="contract-paper quiz-paper">
-        <div class="contract-title">🍽️ Última</div>
-        <div class="contract-line"><b>Comida favorita</b></div>
-        <div class="option-grid">
-          ${btns}
-        </div>
-        <div class="contract-actions" style="margin-top:12px;">
-          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
-        </div>
-      </div>
-    `);
-  }
-
-  // Exponer para onclick
-  window.qMonth = qMonth;
-  window.qWhere = qWhere;
-  window.qFirstDate = qFirstDate;
-  window.qFood = qFood;
-
-  window.q1 = function(correct){
-    if(!correct){
-      wrong("Ese regalito no era 😅", "qMonth");
-      return;
-    }
-    qWhere();
   };
 
-  window.q2 = function(correct){
-    if(!correct){
-      wrong("Casi 😘 ¡Inténtalo otra vez!", "qWhere");
-      return;
-    }
-    qFirstDate();
+  window.q2 = function(c){
+    if(!c){ alert("Casi 😘"); return; }
+    openModal(`
+      <p>Primera cita romántica</p>
+      <button onclick="q3(true)">Cine</button>
+      <button onclick="q3(false)">Galería</button>
+      <br><br><button onclick="closeModal()">Salir</button>
+    `);
   };
 
-  window.q3 = function(correct){
-    if(!correct){
-      wrong("Uy no 🙈 ¡Vuelve a intentarlo!", "qFirstDate");
-      return;
-    }
-    qFood();
+  window.q3 = function(c){
+    if(!c){ alert("No 😅"); return; }
+    openModal(`
+      <p>Comida favorita</p>
+      <button onclick="food()">Pizza</button>
+      <button onclick="food()">Papitas fritas</button>
+      <br><br><button onclick="closeModal()">Salir</button>
+    `);
   };
 
-  window.food = function(choice){
+  window.food = function(){
     addPoints(5);
-    openModal(`
-      <div class="contract-paper quiz-paper" style="text-align:center;">
-        <div class="contract-title">😄💖</div>
-        <div class="contract-line">Anotado: <b>${choice}</b> ✨</div>
-        <div class="contract-line" style="margin-top:6px;">Gracias, ahora lo recordaré 💕</div>
-        <div class="contract-actions" style="margin-top:12px;">
-          <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
-        </div>
-      </div>
-    `);
+    openModal(`<p>Gracias, ahora lo recordaré 😄💖</p><button onclick="closeModal()">Cerrar</button>`);
   };
-
-  // Iniciar
-  qMonth();
 }
 
 /* 6️⃣ ADIVINA NÚMERO */
@@ -945,6 +871,192 @@ window.g = function(x, num){
     openModal(`<p>${msgs[Math.floor(Math.random()*msgs.length)]}</p><button onclick="closeModal()">Intentar</button>`);
   }
 };
+
+
+/* 9️⃣ ROMPECABEZAS (4x4 + TIEMPO) */
+function game9(){
+  const imgUrl = "img/puzzle.jpeg";
+  const size = 4;                 // 4x4
+  const empty = size*size - 1;    // último
+  let tiles = [];
+  let awarded = false;
+
+  openModal(`
+    <div class="puzzle-wrap">
+      <div class="puzzle-top">
+        <h3 style="margin:0;">Rompecabezas 🧩</h3>
+        <div class="puzzle-timer" id="puzzleTimer">00:00</div>
+      </div>
+      <p style="font-size:14px; line-height:1.4; margin:0;">
+        Ordena la imagen. Toca una pieza que esté junto al espacio vacío.
+      </p>
+      <div class="puzzle-board" id="puzzleBoard"></div>
+      <div class="puzzle-actions">
+        <button id="puzzleShuffleBtn">Mezclar 🔀</button>
+        <button onclick="closeModal()">Salir</button>
+      </div>
+    </div>
+  `);
+
+  const board = document.getElementById("puzzleBoard");
+  const shuffleBtn = document.getElementById("puzzleShuffleBtn");
+  const timerEl = document.getElementById("puzzleTimer");
+
+  // Ajusta columnas según tamaño
+  board.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+
+  let timerId = null;
+  let startMs = Date.now();
+
+  function fmt(ms){
+    const total = Math.floor(ms/1000);
+    const mm = String(Math.floor(total/60)).padStart(2,"0");
+    const ss = String(total%60).padStart(2,"0");
+    return `${mm}:${ss}`;
+  }
+
+  function startTimer(){
+    stopTimer();
+    startMs = Date.now();
+    timerEl.textContent = "00:00";
+    timerId = setInterval(() => {
+      timerEl.textContent = fmt(Date.now() - startMs);
+    }, 250);
+  }
+
+  function stopTimer(){
+    if(timerId){
+      clearInterval(timerId);
+      timerId = null;
+    }
+  }
+
+  // Limpieza segura al cerrar modal
+  window.__modalCleanup = () => {
+    stopTimer();
+  };
+
+  function inversionCount(arr){
+    const a = arr.filter(x => x !== empty);
+    let inv = 0;
+    for(let i=0;i<a.length;i++){
+      for(let j=i+1;j<a.length;j++){
+        if(a[i] > a[j]) inv++;
+      }
+    }
+    return inv;
+  }
+
+  function blankRowFromBottom(arr){
+    const emptyIndex = arr.indexOf(empty);
+    const rowFromTop = Math.floor(emptyIndex / size); // 0..size-1
+    return size - rowFromTop; // 1..size
+  }
+
+  function isSolvable(arr){
+    const inv = inversionCount(arr);
+    if(size % 2 === 1){
+      return inv % 2 === 0;
+    } else {
+      const blankFromBottom = blankRowFromBottom(arr);
+      // Regla para grid par:
+      // si el espacio vacío está en fila par desde abajo -> inversions impares
+      // si está en fila impar desde abajo -> inversions pares
+      if(blankFromBottom % 2 === 0) return inv % 2 === 1;
+      return inv % 2 === 0;
+    }
+  }
+
+  function isSolved(arr){
+    for(let i=0;i<arr.length;i++){
+      if(arr[i] !== i) return false;
+    }
+    return true;
+  }
+
+  function shuffleSolvable(){
+    let arr;
+    do{
+      arr = [...Array(size*size).keys()];
+      for(let i=arr.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }while(!isSolvable(arr) || isSolved(arr));
+    return arr;
+  }
+
+  function canMove(tileIndex){
+    const emptyIndex = tiles.indexOf(empty);
+    const r = Math.floor(tileIndex / size), c = tileIndex % size;
+    const er = Math.floor(emptyIndex / size), ec = emptyIndex % size;
+    return (Math.abs(r-er) + Math.abs(c-ec)) === 1;
+  }
+
+  function move(tileIndex){
+    if(!canMove(tileIndex)) return;
+    const emptyIndex = tiles.indexOf(empty);
+    [tiles[tileIndex], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[tileIndex]];
+    render();
+
+    if(isSolved(tiles) && !awarded){
+      awarded = true;
+      stopTimer();
+      const elapsed = fmt(Date.now() - startMs);
+      fireworks();
+      addPoints(12);
+      openModal(`
+        <div class="contract-paper" style="text-align:center;">
+          <div class="contract-title">🎉 ¡Lo lograste!</div>
+          <div class="contract-line">Tiempo: <b>${elapsed}</b></div>
+          <div class="contract-line">+12 puntos 💖</div>
+          <div class="contract-actions" style="margin-top:14px;">
+            <button class="contract-btn-primary" onclick="game9()">Jugar otra vez</button>
+            <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+          </div>
+        </div>
+      `);
+    }
+  }
+
+  function render(){
+    board.innerHTML = "";
+    tiles.forEach((t, idx) => {
+      const div = document.createElement("div");
+      div.className = "puzzle-tile";
+
+      if(t === empty){
+        div.classList.add("puzzle-empty");
+      }else{
+        const tr = Math.floor(t / size);
+        const tc = t % size;
+
+        // Para 4x4: 0%, 33.33%, 66.66%, 100%
+        const x = (tc/(size-1))*100;
+        const y = (tr/(size-1))*100;
+
+        div.style.backgroundImage = `url('${imgUrl}')`;
+        div.style.backgroundSize  = `${size*100}% ${size*100}%`;
+        div.style.backgroundPosition = `${x}% ${y}%`;
+
+        div.addEventListener("click", () => move(idx));
+      }
+
+      board.appendChild(div);
+    });
+  }
+
+  function start(){
+    awarded = false;
+    tiles = shuffleSolvable();
+    render();
+    startTimer();
+  }
+
+  shuffleBtn.addEventListener("click", start);
+  start();
+}
+
 
 /* =========================
    EXPONER FUNCIONES (por si acaso)
