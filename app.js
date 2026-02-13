@@ -809,48 +809,120 @@ function game4(){
 
 /* 5️⃣ QUIZ DE NOSOTROS */
 function game5(){
-  openModal(`
-    <p>¿Nuestro mes?</p>
-    <button onclick="q1(true)">Abril</button>
-    <button onclick="q1(false)">Junio</button>
-    <br><br><button onclick="closeModal()">Salir</button>
-  `);
+  // Respuestas graciosas cuando se equivoca
+  const wrongMsgs = [
+    "¿Cómo que no? 😭 Eso duele más que un lunes… inténtalo otra vez 😅",
+    "Noo mi amor 🙈 ¡Esa me la tienes que saber! Jajaja 💖",
+    "¿En serio no te acuerdas? 😤 *Modo dramático activado* 😂",
+    "Ay no… me estás fallando 😭 pero igual te amo jaja ❤️",
+    "Incorrecto 😅 pero te perdono porque estás bien bonita 😘",
+    "¡Hey! Eso estaba fácil 😳 Vuelve a intentarlo, mi vida 💕",
+    "Casi… bueno, no tan casi 😂 pero inténtalo otra vez 😍",
+    "No mi reina 😌 te doy una pista: piensa en nosotros 💘"
+  ];
 
-  window.q1 = function(c){
-    if(!c){ alert("No 😅"); return; }
+  function funnyNo(goBackFnName){
+    const msg = wrongMsgs[Math.floor(Math.random()*wrongMsgs.length)];
+    openModal(`
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">No 😅</div>
+        <div class="contract-line" style="line-height:1.5;">${msg}</div>
+        <div class="contract-actions" style="margin-top:14px;">
+          <button class="contract-btn-primary" onclick="${goBackFnName}()">Intentar de nuevo</button>
+          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
+        </div>
+      </div>
+    `);
+  }
+
+  function showQ1(){
+    openModal(`
+      <p>¿Nuestro mes?</p>
+      <button onclick="q1(true)">Abril</button>
+      <button onclick="q1(false)">Junio</button>
+      <br><br><button onclick="closeModal()">Salir</button>
+    `);
+  }
+
+  function showQ2(){
     openModal(`
       <p>¿Dónde nos enamoramos?</p>
       <button onclick="q2(true)">Colegio</button>
       <button onclick="q2(false)">Galería</button>
       <br><br><button onclick="closeModal()">Salir</button>
     `);
-  };
+  }
 
-  window.q2 = function(c){
-    if(!c){ alert("Casi 😘"); return; }
+  function showQ3(){
     openModal(`
       <p>Primera cita romántica</p>
       <button onclick="q3(true)">Cine</button>
       <button onclick="q3(false)">Galería</button>
       <br><br><button onclick="closeModal()">Salir</button>
     `);
+  }
+
+  function showFood(){
+    openModal(`
+      <p>Comida favorita</p>
+      <button onclick="food('Pizza')">Pizza</button>
+      <button onclick="food('Papas Fritas')">Papas Fritas</button>
+      <button onclick="food('Baleadas')">Baleadas</button>
+      <button onclick="food('Tajadas de Plátano')">Tajadas de Plátano</button>
+      <button onclick="food('Catrachitas')">Catrachitas</button>
+      <button onclick="food('Pupusas')">Pupusas</button>
+      <button onclick="food('Enchiladas')">Enchiladas</button>
+      <button onclick="food('Tacos')">Tacos</button>
+      <button onclick="food('Hamburguesa')">Hamburguesa</button>
+      <button onclick="food('Sushi')">Sushi</button>
+      <br><br><button onclick="closeModal()">Salir</button>
+    `);
+  }
+
+  // Exponer helpers para los botones "Intentar de nuevo"
+  window.__q_showQ1 = showQ1;
+  window.__q_showQ2 = showQ2;
+  window.__q_showQ3 = showQ3;
+  window.__q_showFood = showFood;
+
+  showQ1();
+
+  window.q1 = function(c){
+    if(!c){ funnyNo("__q_showQ1"); return; }
+    showQ2();
+  };
+
+  window.q2 = function(c){
+    if(!c){ funnyNo("__q_showQ2"); return; }
+    showQ3();
   };
 
   window.q3 = function(c){
-    if(!c){ alert("No 😅"); return; }
-    openModal(`
-      <p>Comida favorita</p>
-      <button onclick="food()">Pizza</button>
-      <button onclick="food()">Papitas fritas</button>
-      <br><br><button onclick="closeModal()">Salir</button>
-    `);
+    if(!c){ funnyNo("__q_showQ3"); return; }
+    showFood();
   };
 
-  window.food = function(){
+  window.food = function(choice){
     addPoints(5);
-    openModal(`<p>Gracias, ahora lo recordaré 😄💖</p><button onclick="closeModal()">Cerrar</button>`);
+    openModal(`
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">Jajaja 😄</div>
+        <div class="contract-line" style="line-height:1.5;">
+          Para ser sincero… esa ni yo me la sabía 🙈<br>
+          pero ahora con tu respuesta ya sé 😏💖
+          <br><br>
+          <b>Elegiste:</b> ${choice}
+          <br><br>
+          La amo siempre ❤️
+        </div>
+        <div class="contract-actions" style="margin-top:14px;">
+          <button class="contract-btn-primary" onclick="closeModal()">Cerrar</button>
+        </div>
+      </div>
+    `);
   };
 }
+
 
 /* 6️⃣ ADIVINA NÚMERO */
 function game6(){
