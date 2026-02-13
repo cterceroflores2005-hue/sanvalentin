@@ -49,7 +49,6 @@ button{
 
 .icon:hover{transform:scale(1.25);}
 
-/* FIREWORKS */
 .firework{
   position:fixed;
   width:5px;
@@ -58,12 +57,12 @@ button{
   animation: explode 1s ease-out forwards;
   z-index:9999;
 }
+
 @keyframes explode {
   0% {opacity:1; transform:translate(0,0);}
   100% {opacity:0; transform:translate(var(--x),var(--y));}
 }
 
-/* MODAL */
 .modal{
   position:fixed;
   top:0;left:0;
@@ -102,7 +101,6 @@ input{
   border:1px solid #ccc;
 }
 
-/* Corazones */
 .heart{
   position:fixed;
   bottom:-10px;
@@ -111,6 +109,7 @@ input{
   font-size:25px;
   z-index:1;
 }
+
 @keyframes floatUp{
   0%{transform:translateY(0);opacity:1;}
   100%{transform:translateY(-110vh);opacity:0;}
@@ -125,97 +124,49 @@ input{
   z-index:10000;
 }
 
-/* PUNTOS GLOBAL */
 #pointsDisplay{
   font-size:20px;
   margin-top:10px;
 }
 
-/* ===== CONTRATO (estilo documento real) ===== */
+/* ===== CONTRATO ===== */
 .contract-paper{
   text-align:left;
   max-height:70vh;
   overflow:auto;
-  padding:22px 20px;
+  padding:20px;
   border-radius:16px;
   background:#fff;
   color:#2b2b2b;
-  border:1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.18);
-  position:relative;
 }
 
 body.night .contract-paper{
   background:#1f2f46;
   color:#ffe1ea;
-  border-color: rgba(255,255,255,0.12);
-}
-
-.contract-paper:before{
-  content:"";
-  position:absolute;
-  inset:0;
-  border-radius:16px;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at 30% 20%, rgba(255,77,109,0.12), transparent 55%),
-    radial-gradient(circle at 80% 60%, rgba(255,126,179,0.10), transparent 55%);
 }
 
 .contract-title{
   font-weight:700;
-  letter-spacing:0.6px;
   text-align:center;
   font-size:18px;
-  margin-bottom:8px;
-  position:relative;
-}
-
-.contract-sub{
-  text-align:center;
-  font-size:13px;
-  opacity:0.85;
-  margin-bottom:14px;
-  position:relative;
-}
-
-.contract-section{
-  margin:14px 0;
-  position:relative;
-}
-
-.contract-section h4{
-  font-size:14px;
-  margin-bottom:8px;
-  color:#ff4d6d;
-}
-
-body.night .contract-section h4{
-  color:#ffd1dc;
+  margin-bottom:10px;
 }
 
 .contract-line{
   margin:6px 0;
-  line-height:1.45;
-  font-size:13.5px;
-}
-
-.contract-label{
-  font-weight:700;
+  font-size:13px;
 }
 
 .contract-list{
-  margin:8px 0 0 18px;
-  font-size:13.5px;
+  margin-left:18px;
+  font-size:13px;
 }
 
 .contract-actions{
   display:flex;
   gap:10px;
   justify-content:center;
-  flex-wrap:wrap;
-  margin-top:14px;
-  position:relative;
+  margin-top:15px;
 }
 
 .contract-btn-primary{
@@ -224,44 +175,86 @@ body.night .contract-section h4{
 }
 
 .contract-btn-secondary{
-  background:rgba(0,0,0,0.08);
-  color:#333;
+  background:#ccc;
+  color:black;
 }
 
-body.night .contract-btn-secondary{
-  background:rgba(255,255,255,0.14);
-  color:#ffe1ea;
+/* ===== FIRMA DIGITAL ===== */
+.sig-canvas{
+  width:100%;
+  height:180px;
+  border-radius:14px;
+  border:2px dashed rgba(0,0,0,0.25);
+  background:white;
+  touch-action:none;
 }
 
-.signature-box{
-  margin-top:14px;
-  padding:12px;
-  border-radius:12px;
-  border:1px dashed rgba(0,0,0,0.25);
-  font-size:13.5px;
-  position:relative;
+
+/* ===== Quiz bonito (botones en grid) ===== */
+.quiz-paper{
+  max-width: 420px;
 }
 
-body.night .signature-box{
-  border-color: rgba(255,255,255,0.25);
-}
-
-.signature-row{
-  display:flex;
-  justify-content:space-between;
+.option-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
   gap:10px;
-  flex-wrap:wrap;
+  margin-top:12px;
 }
 
-.signature{
-  min-width:140px;
-  border-top:1px solid rgba(0,0,0,0.25);
-  padding-top:6px;
-  margin-top:10px;
-  font-weight:600;
-  font-size:13px;
+.option-btn{
+  padding:10px 12px;
+  border:none;
+  border-radius:14px;
+  cursor:pointer;
+  font-weight:700;
+  background:rgba(255,77,109,0.12);
+  color:#ff4d6d;
+  transition:0.2s;
 }
 
-body.night .signature{
-  border-top-color: rgba(255,255,255,0.25);
+.option-btn:active{
+  transform:scale(0.98);
+}
+
+body.night .option-btn{
+  background:rgba(255,255,255,0.10);
+  color:#ffd1dc;
+}
+
+/* ===== PUZZLE (Rompecabezas) ===== */
+.puzzle-wrap{
+  text-align:center;
+}
+
+.puzzle-board{
+  --puzzle-size: 300px;
+  width: var(--puzzle-size);
+  height: var(--puzzle-size);
+  margin: 12px auto 6px auto;
+  display:grid;
+  gap:6px;
+}
+
+.puzzle-tile{
+  border-radius:14px;
+  background-repeat:no-repeat;
+  background-size: var(--puzzle-size) var(--puzzle-size);
+  cursor:pointer;
+  border:2px solid rgba(0,0,0,0.08);
+  box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  transition: transform .12s ease, outline .12s ease;
+  user-select:none;
+}
+
+body.night .puzzle-tile{
+  border-color: rgba(255,255,255,0.14);
+}
+
+.puzzle-tile:active{
+  transform: scale(0.98);
+}
+
+.puzzle-selected{
+  outline: 3px solid rgba(255,77,109,0.85);
 }
