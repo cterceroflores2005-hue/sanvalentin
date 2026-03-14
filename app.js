@@ -1923,3 +1923,422 @@ function game11(){
 
   newGame();
 }
+
+window.game9 = game9;
+window.game10 = game10;
+window.game11 = game11;
+
+/* 1️⃣2️⃣ REACCIÓN RÁPIDA */
+function game12(){
+  let round = 0;
+  let totalMs = 0;
+
+  function startRound(){
+    round++;
+    const wait = 900 + Math.floor(Math.random()*2200);
+    let canTap = false;
+    let startedAt = 0;
+
+    openModal(`
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">⚡ Reacción rápida</div>
+        <div class="contract-line">Ronda <b>${round}</b>/3</div>
+        <div class="contract-line" id="reactMsg">Espera el color verde... no toques antes 😏</div>
+        <div style="margin-top:12px;">
+          <button id="reactBtn" class="contract-btn-secondary" style="min-width:190px;">Preparado...</button>
+        </div>
+        <div class="contract-actions" style="margin-top:14px;">
+          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
+        </div>
+      </div>
+    `);
+
+    const msg = document.getElementById("reactMsg");
+    const btn = document.getElementById("reactBtn");
+    if(!btn) return;
+
+    const onClick = () => {
+      if(!canTap){
+        clearTimeout(timer);
+        openModal(`
+          <div class="contract-paper" style="text-align:center;">
+            <div class="contract-title">😅 Muy pronto</div>
+            <div class="contract-line">Apretaste antes de tiempo. Reintentemos.</div>
+            <div class="contract-actions" style="margin-top:14px;">
+              <button class="contract-btn-primary" onclick="game12()">Reintentar</button>
+              <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+            </div>
+          </div>
+        `);
+        return;
+      }
+
+      const ms = Date.now() - startedAt;
+      totalMs += ms;
+
+      if(round >= 3){
+        const avg = Math.round(totalMs / 3);
+        addPoints(6);
+        openModal(`
+          <div class="contract-paper" style="text-align:center;">
+            <div class="contract-title">🚀 ¡Qué reflejos!</div>
+            <div class="contract-line">Promedio: <b>${avg} ms</b></div>
+            <div class="contract-line">Ganaste +6 puntos</div>
+            <div class="contract-actions" style="margin-top:14px;">
+              <button class="contract-btn-primary" onclick="game12()">Jugar otra vez</button>
+              <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+            </div>
+          </div>
+        `);
+      } else {
+        startRound();
+      }
+    };
+
+    btn.addEventListener("click", onClick);
+
+    const timer = setTimeout(()=>{
+      canTap = true;
+      startedAt = Date.now();
+      msg.textContent = "¡YA! toca el botón lo más rápido posible 💚";
+      btn.textContent = "¡TOCA YA!";
+      btn.className = "contract-btn-primary";
+    }, wait);
+  }
+
+  startRound();
+}
+
+/* 1️⃣3️⃣ MEMORIA DE COLORES */
+function game13(){
+  const COLORS = [
+    {id:"r", name:"Rojo", hex:"#ff4d6d", emoji:"🟥"},
+    {id:"b", name:"Azul", hex:"#4d79ff", emoji:"🟦"},
+    {id:"y", name:"Amarillo", hex:"#ffcd38", emoji:"🟨"},
+    {id:"g", name:"Verde", hex:"#38c172", emoji:"🟩"}
+  ];
+
+  let seq = [];
+  let input = [];
+  let accepting = false;
+
+  function render(info){
+    openModal(`
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">🪄 Memoria de colores</div>
+        <div class="contract-line">${info}</div>
+        <div id="simonPads" style="display:grid;grid-template-columns:repeat(2,minmax(110px,1fr));gap:10px;margin-top:12px;"></div>
+        <div class="contract-actions" style="margin-top:14px;">
+          <button class="contract-btn-primary" id="simonStart">Empezar</button>
+          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
+        </div>
+      </div>
+    `);
+
+    const pads = document.getElementById("simonPads");
+    COLORS.forEach(c => {
+      const b = document.createElement("button");
+      b.textContent = `${c.emoji} ${c.name}`;
+      b.dataset.id = c.id;
+      b.style.background = c.hex;
+      b.style.color = "white";
+      b.style.borderRadius = "14px";
+      b.style.fontWeight = "700";
+      b.style.padding = "14px 10px";
+      b.style.opacity = "0.72";
+      b.style.border = "none";
+      b.addEventListener("click", ()=> onPad(c.id, b));
+      pads.appendChild(b);
+    });
+
+    const startBtn = document.getElementById("simonStart");
+    if(startBtn) startBtn.addEventListener("click", nextRound);
+  }
+
+  function flash(id){
+    const btn = document.querySelector(`#simonPads button[data-id="${id}"]`);
+    if(!btn) return;
+    btn.style.opacity = "1";
+    btn.style.transform = "scale(1.06)";
+    setTimeout(()=>{
+      btn.style.opacity = "0.72";
+      btn.style.transform = "scale(1)";
+    }, 340);
+  }
+
+  function nextRound(){
+    accepting = false;
+    input = [];
+    seq.push(COLORS[Math.floor(Math.random()*COLORS.length)].id);
+    render(`Nivel <b>${seq.length}</b> — memoriza la secuencia`);
+
+    let i = 0;
+    const iv = setInterval(()=>{
+      flash(seq[i]);
+      i++;
+      if(i >= seq.length){
+        clearInterval(iv);
+        setTimeout(()=>{ accepting = true; }, 400);
+      }
+    }, 600);
+  }
+
+  function onPad(id){
+    if(!accepting) return;
+    input.push(id);
+    flash(id);
+
+    const idx = input.length - 1;
+    if(input[idx] !== seq[idx]){
+      openModal(`
+        <div class="contract-paper" style="text-align:center;">
+          <div class="contract-title">💥 Casi</div>
+          <div class="contract-line">Llegaste al nivel <b>${seq.length}</b>.</div>
+          <div class="contract-actions" style="margin-top:14px;">
+            <button class="contract-btn-primary" onclick="game13()">Reintentar</button>
+            <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+          </div>
+        </div>
+      `);
+      return;
+    }
+
+    if(input.length === seq.length){
+      if(seq.length >= 5){
+        addPoints(7);
+        openModal(`
+          <div class="contract-paper" style="text-align:center;">
+            <div class="contract-title">🎉 ¡Memoria top!</div>
+            <div class="contract-line">Completaste 5 niveles (+7 puntos)</div>
+            <div class="contract-actions" style="margin-top:14px;">
+              <button class="contract-btn-primary" onclick="game13()">Jugar otra vez</button>
+              <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+            </div>
+          </div>
+        `);
+      } else {
+        setTimeout(nextRound, 450);
+      }
+    }
+  }
+
+  render("Presiona empezar para jugar");
+}
+
+/* 1️⃣4️⃣ MÁS ALTO O MÁS BAJO */
+function game14(){
+  const target = 1 + Math.floor(Math.random()*50);
+  let tries = 0;
+
+  openModal(`
+    <div class="contract-paper" style="text-align:center;">
+      <div class="contract-title">📈 Más alto o más bajo</div>
+      <div class="contract-line">Adivina un número del 1 al 50</div>
+      <input id="hlInput" type="number" min="1" max="50" placeholder="Escribe un número">
+      <div class="contract-line" id="hlMsg">Tienes 7 intentos</div>
+      <div class="contract-actions" style="margin-top:10px;">
+        <button class="contract-btn-primary" id="hlTry">Probar</button>
+        <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
+      </div>
+    </div>
+  `);
+
+  const input = document.getElementById("hlInput");
+  const msg = document.getElementById("hlMsg");
+  const btn = document.getElementById("hlTry");
+
+  btn.addEventListener("click", ()=>{
+    const n = Number(input.value);
+    if(!Number.isInteger(n) || n < 1 || n > 50){
+      msg.textContent = "Ingresa un número válido entre 1 y 50";
+      return;
+    }
+    tries++;
+
+    if(n === target){
+      const bonus = Math.max(3, 9 - tries);
+      addPoints(bonus);
+      openModal(`
+        <div class="contract-paper" style="text-align:center;">
+          <div class="contract-title">🥳 ¡Correcto!</div>
+          <div class="contract-line">Era el <b>${target}</b></div>
+          <div class="contract-line">Intentos: <b>${tries}</b> (+${bonus} puntos)</div>
+          <div class="contract-actions" style="margin-top:14px;">
+            <button class="contract-btn-primary" onclick="game14()">Jugar otra vez</button>
+            <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+          </div>
+        </div>
+      `);
+      return;
+    }
+
+    if(tries >= 7){
+      openModal(`
+        <div class="contract-paper" style="text-align:center;">
+          <div class="contract-title">😬 Se acabaron los intentos</div>
+          <div class="contract-line">El número era <b>${target}</b></div>
+          <div class="contract-actions" style="margin-top:14px;">
+            <button class="contract-btn-primary" onclick="game14()">Reintentar</button>
+            <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+          </div>
+        </div>
+      `);
+      return;
+    }
+
+    msg.textContent = n < target
+      ? `Más alto ⬆️ (intento ${tries}/7)`
+      : `Más bajo ⬇️ (intento ${tries}/7)`;
+    input.select();
+  });
+}
+
+/* 1️⃣5️⃣ PIEDRA PAPEL O TIJERA */
+function game15(){
+  const CHOICES = ["piedra","papel","tijera"];
+  const EMOJI = {piedra:"✊", papel:"✋", tijera:"✌️"};
+  let wins = 0;
+  let rounds = 0;
+
+  function cpu(){ return CHOICES[Math.floor(Math.random()*CHOICES.length)]; }
+
+  function result(a,b){
+    if(a===b) return 0;
+    if(
+      (a==="piedra" && b==="tijera") ||
+      (a==="papel" && b==="piedra") ||
+      (a==="tijera" && b==="papel")
+    ) return 1;
+    return -1;
+  }
+
+  openModal(`
+    <div class="contract-paper" style="text-align:center;">
+      <div class="contract-title">✊ Piedra, papel o tijera</div>
+      <div class="contract-line">Gana 2 de 3 rondas</div>
+      <div id="rpsMsg" class="contract-line">Elige tu jugada</div>
+      <div id="rpsBtns" style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:10px;"></div>
+      <div class="contract-actions" style="margin-top:14px;">
+        <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
+      </div>
+    </div>
+  `);
+
+  const box = document.getElementById("rpsBtns");
+  const msg = document.getElementById("rpsMsg");
+
+  CHOICES.forEach(c => {
+    const b = document.createElement("button");
+    b.textContent = `${EMOJI[c]} ${c}`;
+    b.addEventListener("click", ()=>{
+      if(rounds >= 3) return;
+      rounds++;
+      const pc = cpu();
+      const r = result(c, pc);
+      if(r===1) wins++;
+      const roundMsg = r === 0 ? "Empate" : (r === 1 ? "Ganaste" : "Perdiste");
+      msg.textContent = `Tú: ${EMOJI[c]} vs CPU: ${EMOJI[pc]} — ${roundMsg}`;
+
+      if(rounds >= 3){
+        if(wins >= 2){
+          addPoints(5);
+          openModal(`
+            <div class="contract-paper" style="text-align:center;">
+              <div class="contract-title">🏆 ¡Victoria!</div>
+              <div class="contract-line">Ganaste ${wins}/3 rondas (+5 puntos)</div>
+              <div class="contract-actions" style="margin-top:14px;">
+                <button class="contract-btn-primary" onclick="game15()">Jugar otra vez</button>
+                <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+              </div>
+            </div>
+          `);
+        } else {
+          openModal(`
+            <div class="contract-paper" style="text-align:center;">
+              <div class="contract-title">🙈 Casi</div>
+              <div class="contract-line">Ganaste ${wins}/3 rondas</div>
+              <div class="contract-actions" style="margin-top:14px;">
+                <button class="contract-btn-primary" onclick="game15()">Reintentar</button>
+                <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+              </div>
+            </div>
+          `);
+        }
+      }
+    });
+    box.appendChild(b);
+  });
+}
+
+/* 1️⃣6️⃣ ENCUENTRA EL INTRUSO */
+function game16(){
+  const sets = [
+    { good:"💖", odd:"💔" },
+    { good:"🌸", odd:"🌵" },
+    { good:"🧸", odd:"🦖" },
+    { good:"🍓", odd:"🍋" },
+    { good:"🎵", odd:"🔔" },
+  ];
+
+  let score = 0;
+  let round = 0;
+
+  function renderRound(){
+    round++;
+    const cfg = sets[Math.floor(Math.random()*sets.length)];
+    const total = 12;
+    const oddPos = Math.floor(Math.random()*total);
+
+    openModal(`
+      <div class="contract-paper" style="text-align:center;">
+        <div class="contract-title">🎯 Encuentra el intruso</div>
+        <div class="contract-line">Ronda ${round}/3</div>
+        <div id="oddGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;"></div>
+        <div class="contract-line" style="margin-top:8px;">Toca el emoji diferente</div>
+        <div class="contract-actions" style="margin-top:12px;">
+          <button class="contract-btn-secondary" onclick="closeModal()">Salir</button>
+        </div>
+      </div>
+    `);
+
+    const grid = document.getElementById("oddGrid");
+    for(let i=0;i<total;i++){
+      const b = document.createElement("button");
+      b.textContent = i===oddPos ? cfg.odd : cfg.good;
+      b.style.fontSize = "28px";
+      b.style.borderRadius = "12px";
+      b.style.padding = "8px";
+      b.addEventListener("click", ()=>{
+        if(i===oddPos){
+          score++;
+        }
+
+        if(round >= 3){
+          const won = score >= 2;
+          if(won) addPoints(6);
+          openModal(`
+            <div class="contract-paper" style="text-align:center;">
+              <div class="contract-title">${won ? "🥰 ¡Buen ojo!" : "😵‍💫 Casi"}</div>
+              <div class="contract-line">Aciertos: <b>${score}</b>/3 ${won ? "(+6 puntos)" : ""}</div>
+              <div class="contract-actions" style="margin-top:14px;">
+                <button class="contract-btn-primary" onclick="game16()">Jugar otra vez</button>
+                <button class="contract-btn-secondary" onclick="closeModal()">Cerrar</button>
+              </div>
+            </div>
+          `);
+        } else {
+          renderRound();
+        }
+      });
+      grid.appendChild(b);
+    }
+  }
+
+  renderRound();
+}
+
+window.game12 = game12;
+window.game13 = game13;
+window.game14 = game14;
+window.game15 = game15;
+window.game16 = game16;
