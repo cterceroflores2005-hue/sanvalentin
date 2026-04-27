@@ -3,48 +3,78 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>San Valentín ❤️</title>
-
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;600&display=swap" rel="stylesheet">
+  <title>San Valentín Arcade ❤️</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
-
-<div class="toggle" id="nightToggle">🌓</div>
-
-<audio id="bgMusic" loop preload="auto">
-  <source src="music/cancion.mp3" type="audio/mpeg">
-</audio>
-
-<div class="container" id="startPage">
-  <h1>Maryuri Paola Rodriguez Guiza ❤️<br>¿Quieres ser mi San Valentín?</h1>
-  <button id="yesBtn">Sí 💖</button>
-  <button id="noBtn">No 😢</button>
-</div>
-
-<div class="container hidden" id="mainPage">
-  <h2>Gracias por aceptar mi amor ❤️</h2>
-  <div id="pointsDisplay">Puntos: 0</div>
-
-  <div class="icon-grid">
-    <div class="icon" onclick="openCalculator()">🧮</div>
-    <div class="icon" onclick="openContract()">📜</div>
-    <div class="icon" onclick="game1()">💘</div>
-    <div class="icon" onclick="game2()">🎁</div>
-    <div class="icon" onclick="game9()">🧩</div>
-    <div class="icon" onclick="game4()">🎲</div>
-    <div class="icon" onclick="game5()">❓</div>
-    <div class="icon" onclick="game6()">🔢</div>
-    <div class="icon" onclick="game10()">💌</div>
-    <div class="icon" onclick="game11()">🔎</div>
+  <div class="top-actions">
+    <button class="round-action" id="nightToggle" title="Modo noche">🌓</button>
+    <button class="round-action" id="soundToggle" title="Música">🎵</button>
   </div>
-</div>
 
-<div class="modal" id="modal">
-  <div class="modal-content" id="modalContent"></div>
-</div>
+  <audio id="bgMusic" loop preload="auto">
+    <source src="music/cancion.mp3" type="audio/mpeg">
+  </audio>
 
-<script src="app.js"></script>
+  <section class="welcome-screen" id="startPage">
+    <div class="hero-card">
+      <div class="badge">San Valentín Arcade</div>
+      <h1>Maryuri Paola Rodriguez Guiza ❤️</h1>
+      <p class="hero-subtitle">¿Aceptas entrar a una aventura de minijuegos, puntos, niveles y sorpresas conmigo?</p>
+      <div class="hero-actions">
+        <button class="primary-btn" id="yesBtn">Jugar 💖</button>
+        <button class="ghost-btn runaway" id="noBtn">No 😢</button>
+      </div>
+    </div>
+  </section>
+
+  <main class="app hidden" id="mainPage">
+    <section class="dashboard">
+      <div>
+        <p class="eyebrow">Arcade del amor</p>
+        <h2>Bienvenida, mi amor ❤️</h2>
+        <p class="muted">Completa 50 experiencias, sube de nivel y desbloquea la sorpresa final.</p>
+      </div>
+      <div class="score-card">
+        <span>Puntos</span>
+        <strong id="pointsDisplay">0</strong>
+        <small id="levelDisplay">Nivel 1 · Principiante</small>
+      </div>
+    </section>
+
+    <section class="progress-panel">
+      <div class="progress-copy">
+        <strong id="missionTitle">Misión actual: gana 5 juegos</strong>
+        <span id="missionText">Cada juego ganado suma progreso para desbloquear el video sorpresa.</span>
+      </div>
+      <div class="progress-track"><div id="progressFill"></div></div>
+      <div class="quick-actions">
+        <button onclick="openStats()">📊 Estadísticas</button>
+        <button onclick="openHowToPlay()">❔ Ayuda</button>
+        <button onclick="resetProgress()">🔄 Reiniciar</button>
+      </div>
+    </section>
+
+    <section class="game-toolbar">
+      <input id="gameSearch" type="search" placeholder="Buscar juego...">
+      <select id="gameFilter">
+        <option value="all">Todos</option>
+        <option value="rapido">Rápidos</option>
+        <option value="memoria">Memoria</option>
+        <option value="azar">Azar</option>
+        <option value="reto">Retos</option>
+        <option value="habilidad">Habilidad</option>
+      </select>
+    </section>
+
+    <section class="game-grid" id="gameGrid" aria-live="polite"></section>
+  </main>
+
+  <div class="modal" id="modal">
+    <div class="modal-content" id="modalContent"></div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
